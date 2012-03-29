@@ -1,0 +1,14 @@
+(((esi <- 21) ;; loop termination variable = 10
+  (ebx <- 3) ;; start counting at 1
+  
+  :loop
+  (cjump ebx <= esi :print :done)
+  
+  :print
+  (eax <- (print ebx)) ;; print ebx
+  (ebx += 2) ;; increment ebx by 1
+  (goto :loop)
+
+  :done
+  ))
+  
