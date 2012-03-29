@@ -1,0 +1,28 @@
+(((edi <- 0)
+
+  :compare
+  (cjump edi <= 8 :funcCall :done)
+
+  :funcCall
+  (eax <- edi)
+  (call :isdivbytwo)
+  (eax <<= 1)
+  (eax += 1)
+  (eax <- (print eax))
+  (edi += 1)
+  (goto :compare)
+
+  :done)
+
+ (:isdivbytwo
+  (eax &= 3)
+  
+  (cjump eax = 0 :yes :no)
+
+  :no
+  (eax <- 0)
+  (return)
+
+  :yes
+  (eax <- 1)
+  (return)))
