@@ -382,7 +382,7 @@
     [update-sop-sx (lhs operation rhs)
                    (compile-update-sop-sx lhs operation rhs)]
     [update-sop-num (lhs operation rhs)
-                    (compile-update-sop-sx lhs operation rhs)]
+                    (compile-update-sop-num lhs operation rhs)]
     [save-comparison (dest lhs operation rhs)
                      (compile-save-comparison dest lhs operation rhs)]
     [label (name)
