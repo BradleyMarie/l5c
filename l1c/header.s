@@ -1,6 +1,5 @@
-	.file	"prog.c"
 	.text
-.globl go
+	.globl go
 	.type	go, @function
 go:
         pushl   %ebp
