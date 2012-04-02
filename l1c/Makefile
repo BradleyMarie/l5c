@@ -1,4 +1,4 @@
-all: runtime/runtime.o
+all:
 	make -C runtime
 	raco exe -o L1c-bin l1c.rkt
 
