@@ -277,7 +277,7 @@
   (cond 
     [(and (num? cond-lhs) (num? cond-rhs))
      (print-line
-      (string-append "jmp _"
+      (string-append "jmp "
                      (cond
                        [(eq? '< cond-operation)
                         (if (< cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label))]
@@ -294,13 +294,13 @@
        (print-line 
         (cond
           [(eq? '< cond-operation)
-           (string-append "jg _" (symbol->string true-label))]
+           (string-append "jg " (symbol->string true-label))]
           [(eq? '<= cond-operation)
-           (string-append "jge _" (symbol->string true-label))]
+           (string-append "jge " (symbol->string true-label))]
           [(eq? '= cond-operation)
-           (string-append "je _" (symbol->string true-label))]))
+           (string-append "je " (symbol->string true-label))]))
        (print-line
-        (string-append "jmp _" (symbol->string false-label))))]
+        (string-append "jmp " (symbol->string false-label))))]
     [else
      (begin 
        (print-line
@@ -309,19 +309,19 @@
        (print-line 
         (cond
           [(eq? '< cond-operation)
-           (string-append "jl _" (symbol->string true-label))]
+           (string-append "jl " (symbol->string true-label))]
           [(eq? '<= cond-operation)
-           (string-append "jle _" (symbol->string true-label))]
+           (string-append "jle " (symbol->string true-label))]
           [(eq? '= cond-operation)
-           (string-append "je _" (symbol->string true-label))]))
+           (string-append "je " (symbol->string true-label))]))
        (print-line
-        (string-append "jmp _" (symbol->string false-label))))]))
+        (string-append "jmp " (symbol->string false-label))))]))
 
 (define (compile-label name)
-  (print-line (string-append new-label ":")))
+  (print-line (string-append name ":")))
 
 (define (compile-goto-label name)
-  (print-line (string-append "jmp _" (symbol->string name))))
+  (print-line (string-append "jmp " (symbol->string name))))
 
 (define unique-label-index 0)
 (define (generate-unique-label)
@@ -335,7 +335,7 @@
       (print-line (string-append "pushl $" new-label))
       (print-line "pushl %ebp")
       (print-line "movl %esp, %ebp")
-      (print-line (string-append "jmp _" (symbol->string func-ref)))
+      (print-line (string-append "jmp " (symbol->string func-ref)))
       (print-line (string-append new-label ":")))))
 
 (define (compile-return-from-func)
@@ -347,7 +347,7 @@
 (define (compile-tail-call-func func-ref)
   (begin
     (print-line "movl %ebp, %esp")
-    (print-line (string-append "jmp _" (symbol->string func-ref)))))
+    (print-line (string-append "jmp " (symbol->string func-ref)))))
 
 (define (compile-print-t source)
   (begin
