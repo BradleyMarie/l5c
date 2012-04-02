@@ -193,10 +193,10 @@
   (print-line (string-append "movl " (format-operand source) ", " (format-operand dest))))
 
 (define (compile-read-memory dest source-base source-offset)
-  (print-line "read-memory: not implemented"))
+  (print-line (string-append "movl " (number->string source-offset) "(" (format-operand source-base) "), " (format-operand dest))))
 
 (define (compile-update-memory dest-base dest-offset source)
-  (print-line "update-memory: not implemented"))
+  (print-line (string-append "movl " (format-operand source) ", " (number->string dest-offset) "(" (format-operand dest-base) ")")))
 
 (define (boolean->numbered-string value)
   (if value "1" "0"))
