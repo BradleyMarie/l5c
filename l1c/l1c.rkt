@@ -186,7 +186,7 @@
 
 (define (print-line string)
   (begin
-    (print string)
+    (display string)
     (newline)))
 
 (define (compile-assign-register dest source)
