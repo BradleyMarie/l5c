@@ -230,56 +230,92 @@
       (string-append "sarl " (format-operand rhs) ", " (format-operand lhs))])))
 
 (define (compile-save-comparison dest lhs operation rhs)
-  (if (and (num? lhs) (num? rhs))
-      (print-line
-       (cond
-         [(eq? '< operation)
-          (string-append "movl $" (boolean->numbered-string (< lhs rhs) ) ", " (format-operand dest))]
-         [(eq? '<= operation)
-          (string-append "movl $" (boolean->numbered-string (<= lhs rhs) ) ", " (format-operand dest))]
-         [(eq? '= operation)
-          (string-append "movl $" (boolean->numbered-string (= lhs rhs) ) ", " (format-operand dest))])
-       )
-      (begin 
-        (print-line
-         (string-append
-          "cmp " (format-operand rhs) ", " (format-operand lhs)))
-        (print-line 
-         (cond
-           [(eq? '< operation)
-            (string-append "setl " (lowest-bits dest))]
-           [(eq? '<= operation)
-            (string-append "setle " (lowest-bits dest))]
-           [(eq? '= operation)
-            (string-append "sete " (lowest-bits dest))]))
-        (print-line
-         (string-append "movzbl " (lowest-bits dest) ", " (format-operand dest))))))
+  (cond 
+    [(and (num? lhs) (num? rhs))
+     (print-line
+      (cond
+        [(eq? '< operation)
+         (string-append "movl $" (boolean->numbered-string (< lhs rhs) ) ", " (format-operand dest))]
+        [(eq? '<= operation)
+         (string-append "movl $" (boolean->numbered-string (<= lhs rhs) ) ", " (format-operand dest))]
+        [(eq? '= operation)
+         (string-append "movl $" (boolean->numbered-string (= lhs rhs) ) ", " (format-operand dest))])
+      )]
+    [(num? lhs)
+     (begin 
+       (print-line
+        (string-append
+         "cmp " (format-operand lhs) ", " (format-operand rhs)))
+       (print-line 
+        (cond
+          [(eq? '< operation)
+           (string-append "setg " (lowest-bits dest))]
+          [(eq? '<= operation)
+           (string-append "setge " (lowest-bits dest))]
+          [(eq? '= operation)
+           (string-append "sete " (lowest-bits dest))]))
+       (print-line
+        (string-append "movzbl " (lowest-bits dest) ", " (format-operand dest))))
+     ]
+    [else
+     (begin 
+       (print-line
+        (string-append
+         "cmp " (format-operand rhs) ", " (format-operand lhs)))
+       (print-line 
+        (cond
+          [(eq? '< operation)
+           (string-append "setl " (lowest-bits dest))]
+          [(eq? '<= operation)
+           (string-append "setle " (lowest-bits dest))]
+          [(eq? '= operation)
+           (string-append "sete " (lowest-bits dest))]))
+       (print-line
+        (string-append "movzbl " (lowest-bits dest) ", " (format-operand dest))))]))
 
 (define (compile-cond-jump cond-lhs cond-operation cond-rhs true-label false-label )
-  (if (and (num? cond-lhs) (num? cond-lhs))
-      (print-line
-       (string-append "jmp _"
-                      (cond
-                        [(eq? '< cond-operation)
-                         (if (< cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label))]
-                        [(eq? '<= cond-operation)
-                         (if (<= cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label))]
-                        [(eq? '= cond-operation)
-                         (if (= cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label) )])))
-      (begin 
-        (print-line
-         (string-append
-          "cmp " (format-operand cond-rhs) ", " (format-operand cond-lhs)))
-        (print-line 
-         (cond
-           [(eq? '< cond-operation)
-            (string-append "jl _" (symbol->string true-label))]
-           [(eq? '<= cond-operation)
-            (string-append "jle _" (symbol->string true-label))]
-           [(eq? '= cond-operation)
-            (string-append "je _" (symbol->string true-label))]))
-        (print-line
-         (string-append "jmp _" (symbol->string false-label))))))
+  (cond 
+    [(and (num? cond-lhs) (num? cond-lhs))
+     (print-line
+      (string-append "jmp _"
+                     (cond
+                       [(eq? '< cond-operation)
+                        (if (< cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label))]
+                       [(eq? '<= cond-operation)
+                        (if (<= cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label))]
+                       [(eq? '= cond-operation)
+                        (if (= cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label) )])))
+     ]
+    [(num? cond-lhs)
+     (begin 
+       (print-line
+        (string-append
+         "cmp " (format-operand cond-lhs) ", " (format-operand cond-rhs)))
+       (print-line 
+        (cond
+          [(eq? '< cond-operation)
+           (string-append "jg _" (symbol->string true-label))]
+          [(eq? '<= cond-operation)
+           (string-append "jge _" (symbol->string true-label))]
+          [(eq? '= cond-operation)
+           (string-append "je _" (symbol->string true-label))]))
+       (print-line
+        (string-append "jmp _" (symbol->string false-label))))]
+    [else
+     (begin 
+       (print-line
+        (string-append
+         "cmp " (format-operand cond-rhs) ", " (format-operand cond-lhs)))
+       (print-line 
+        (cond
+          [(eq? '< cond-operation)
+           (string-append "jl _" (symbol->string true-label))]
+          [(eq? '<= cond-operation)
+           (string-append "jle _" (symbol->string true-label))]
+          [(eq? '= cond-operation)
+           (string-append "je _" (symbol->string true-label))]))
+       (print-line
+        (string-append "jmp _" (symbol->string false-label))))]))
 
 (define (compile-label name)
   (print-line (string-append "$" (symbol->string name))))
