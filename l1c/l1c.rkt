@@ -151,13 +151,9 @@
        sexpr))
 
 (define (parse-program sexpr)
-  (append* (list (label 'go))
-          (map (lambda (instruction)
-                 (parse-instruction instruction))
-               (first sexpr))
-          (map (lambda (function)
-                 (parse-function function))
-               (rest sexpr))))
+  (append* (map (lambda (function)
+                  (parse-function function))
+                sexpr)))
 
 (test (parse-instruction '(eax <- ebx)) (assign-register 'eax 'ebx))
 (test (parse-instruction '(eax <- 3)) (assign-register 'eax 3))
