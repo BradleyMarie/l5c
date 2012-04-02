@@ -357,15 +357,15 @@
 
 (define (compile-allocate-t size num)
   (begin
-    (print-line (string-append "pushl " (format-operand size)))
     (print-line (string-append "pushl " (format-operand num)))
+    (print-line (string-append "pushl " (format-operand size)))
     (print-line "call allocate")
     (print-line "addl $8,%esp")))
 
 (define (compile-array-error-t base index)
   (begin
-    (print-line (string-append "pushl " (format-operand base)))
     (print-line (string-append "pushl " (format-operand index)))
+    (print-line (string-append "pushl " (format-operand base)))
     (print-line "call array-error")
     (print-line "addl $8,%esp")))
 
