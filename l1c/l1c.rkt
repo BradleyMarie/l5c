@@ -145,6 +145,20 @@
     [(? l1-label? l)
      (label (parse-l1-label l))]))
 
+(define (parse-function sexpr)
+  (map (lambda (instruction)
+         (parse-instruction instruction))
+       sexpr))
+
+(define (parse-program sexpr)
+  (append* (list (label 'go))
+          (map (lambda (instruction)
+                 (parse-instruction instruction))
+               (first sexpr))
+          (map (lambda (function)
+                 (parse-function function))
+               (rest sexpr))))
+
 (test (parse-instruction '(eax <- ebx)) (assign-register 'eax 'ebx))
 (test (parse-instruction '(eax <- 3)) (assign-register 'eax 3))
 
