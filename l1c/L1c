@@ -3,7 +3,7 @@
 # Compile
 make -s -C runtime
 cat header.s > prog.s
-L1c $1 >> prog.s
+L1c-bin $1 >> prog.s
 cat footer.s >> prog.s
 
 # Assemble
