@@ -318,7 +318,7 @@
         (string-append "jmp _" (symbol->string false-label))))]))
 
 (define (compile-label name)
-  (print-line (string-append "$" (symbol->string name))))
+  (print-line (string-append new-label ":")))
 
 (define (compile-goto-label name)
   (print-line (string-append "jmp _" (symbol->string name))))
@@ -327,7 +327,7 @@
 (define (generate-unique-label)
   (begin 
     (set! unique-label-index (+ unique-label-index 1))
-    (string-append "label-" (number->string unique-label-index))))
+    (string-append "label_" (number->string unique-label-index))))
 
 (define (compile-call-func func-ref)
   (let ([new-label (generate-unique-label)])
