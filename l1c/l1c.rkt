@@ -275,7 +275,7 @@
 
 (define (compile-cond-jump cond-lhs cond-operation cond-rhs true-label false-label )
   (cond 
-    [(and (num? cond-lhs) (num? cond-lhs))
+    [(and (num? cond-lhs) (num? cond-rhs))
      (print-line
       (string-append "jmp _"
                      (cond
