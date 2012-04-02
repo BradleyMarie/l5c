@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Compile
+make -s -C runtime
+cat header.s > prog.s
+L1c $1 >> prog.s
+cat footer.s >> prog.s
+
+# Assemble
+as --32 -o prog.o prog.s
+
+# Link
+gcc -m32 -o a.out prog.o runtime/runtime.o
+
+# Cleanup
+rm runtime/runtime.o prog.s prog.o
