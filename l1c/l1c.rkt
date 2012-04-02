@@ -73,6 +73,18 @@
 
 (define (parse-instruction sexpr)
   (match sexpr
+    ; (eax <- (print t))
+    [(list 'eax '<- (list 'print source))
+     (print-t source)]
+    
+    ; (eax <- (allocate t t))
+    [(list 'eax '<- (list 'allocate size num))
+     (allocate-t size num)]
+    
+    ; (eax <- (array-error t t))
+    [(list 'eax '<- (list 'array-error base index))
+     (array-error-t base index)]
+    
     ; (x <- (mem x n4)) ; read from memory @ x+n4
     [(list dest '<- (list 'mem source-base source-offset ) )
      (read-memory dest source-base source-offset)]
@@ -129,18 +141,6 @@
     [(list 'return)
      (return-from-func)]
     
-    ; (eax <- (print t))
-    [(list 'eax '<- (list 'print source))
-     (print-t source)]
-    
-    ; (eax <- (allocate t t))
-    [(list 'eax '<- (list 'allocate size num))
-     (allocate-t size num)]
-    
-    ; (eax <- (array-error t t))
-    [(list 'eax '<- (list 'array-error base index))
-     (array-error-t base index)]
-    
     ; label ;; target of a jump
     [(? l1-label? l)
      (label (parse-l1-label l))]))
@@ -151,9 +151,9 @@
        sexpr))
 
 (define (parse-program sexpr)
-  (append* (map (lambda (function)
-                  (parse-function function))
-                sexpr)))
+  (map (lambda (function)
+         (parse-function function))
+       sexpr))
 
 ;-------------------------parser tests----------------------------------------------
 
@@ -402,5 +402,30 @@
     [allocate-t (size num)
                 (compile-allocate-t size num)]
     [array-error-t (base index)
-                   (compile-array-error-t)]))  
+                   (compile-array-error-t)]))
+
+(define (compile-function function)
+  (map (lambda (instruction)
+         (compile-instruction instruction))
+       function))
   
+(define (compile-program sexpr)
+  (begin
+    (compile-function (first sexpr))
+    (print-line "popl %ebp");
+    (print-line "popl %edi");
+    (print-line "popl %esi");
+    (print-line "popl %ebx");
+    (print-line "leave");
+    (print-line "ret");
+    (map (lambda (function)
+           (compile-function function))
+         (rest sexpr))
+    (void)))
+
+(require racket/cmdline)
+(define filename
+  (command-line
+   #:args (filename) filename))
+
+(compile-program (parse-program (call-with-input-file filename read)))
