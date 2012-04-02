@@ -155,6 +155,8 @@
                   (parse-function function))
                 sexpr)))
 
+;-------------------------parser tests----------------------------------------------
+
 (test (parse-instruction '(eax <- ebx)) (assign-register 'eax 'ebx))
 (test (parse-instruction '(eax <- 3)) (assign-register 'eax 3))
 
@@ -166,3 +168,210 @@
 (test (parse-instruction '(eax <<= 2)) (update-sop-num 'eax '<<= 2))
 
 (test (parse-instruction '(eax <- ebx < 2)) (save-comparison 'eax 'ebx '< 2))
+
+;------------------------begin compiler code----------------------------------------
+
+(define (format-operand operand)
+  (cond
+    [(x? operand) (string-append "%" (symbol->string operand))]
+    [(l1c-label? operand) (string-append "$" (symbol->string operand))]
+    [(number? operand) (string-append "$" (number->string operand))]))
+
+(define (lowest-bits register)
+  (cond
+    [(eq? 'eax register) "%al"]
+    [(eq? 'ebx register) "%bl"]
+    [(eq? 'ecx register) "%cl"]
+    [(eq? 'edx register) "%dl"]))
+
+(define (print-line string)
+  (begin
+    (print string)
+    (newline)))
+
+(define (compile-assign-register dest source)
+  (print-line (string-append "movl " (format-operand source) ", " (format-operand dest))))
+
+(define (compile-read-memory dest source-base source-offset)
+  (print-line "read-memory: not implemented"))
+
+(define (compile-update-memory dest-base dest-offset source)
+  (print-line "update-memory: not implemented"))
+
+(define (boolean->numbered-string value)
+  (if value "1" "0"))
+
+(define (compile-update-aop lhs operation rhs)
+  (print-line
+   (cond
+     [(eq? '+= operation)
+      (string-append "addl " (format-operand rhs) ", " (format-operand lhs))]
+     [(eq? '-= operation)
+      (string-append "subl " (format-operand rhs) ", " (format-operand lhs))]
+     [(eq? '*= operation)
+      (string-append "imul " (format-operand rhs) ", " (format-operand lhs))]
+     [(eq? '/= operation)
+      (string-append "andl " (format-operand rhs) ", " (format-operand lhs))])))
+
+(define (compile-update-sop-sx lhs operation rhs)
+  (print-line
+   (cond
+     [(eq? '<<= operation)
+      (string-append "sall %cl, " (format-operand lhs))]
+     [(eq? '>>= operation)
+      (string-append "sarl %cl, " (format-operand lhs))])))
+
+(define (compile-update-sop-num lhs operation rhs)
+  (print-line
+   (cond
+     [(eq? '<<= operation)
+      (string-append "sall " (format-operand rhs) ", " (format-operand lhs))]
+     [(eq? '>>= operation)
+      (string-append "sarl " (format-operand rhs) ", " (format-operand lhs))])))
+
+(define (compile-save-comparison dest lhs operation rhs)
+  (if (and (num? lhs) (num? rhs))
+      (print-line
+       (cond
+         [(eq? '< operation)
+          (string-append "movl $" (boolean->numbered-string (< lhs rhs) ) ", " (format-operand dest))]
+         [(eq? '<= operation)
+          (string-append "movl $" (boolean->numbered-string (<= lhs rhs) ) ", " (format-operand dest))]
+         [(eq? '= operation)
+          (string-append "movl $" (boolean->numbered-string (= lhs rhs) ) ", " (format-operand dest))])
+       )
+      (begin 
+        (print-line
+         (string-append
+          "cmp " (format-operand rhs) ", " (format-operand lhs)))
+        (print-line 
+         (cond
+           [(eq? '< operation)
+            (string-append "setl " (lowest-bits dest))]
+           [(eq? '<= operation)
+            (string-append "setle " (lowest-bits dest))]
+           [(eq? '= operation)
+            (string-append "sete " (lowest-bits dest))]))
+        (print-line
+         (string-append "movzbl " (lowest-bits dest) ", " (format-operand dest))))))
+
+(define (compile-cond-jump cond-lhs cond-operation cond-rhs true-label false-label )
+  (if (and (num? cond-lhs) (num? cond-lhs))
+      (print-line
+       (string-append "jmp _"
+                      (cond
+                        [(eq? '< cond-operation)
+                         (if (< cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label))]
+                        [(eq? '<= cond-operation)
+                         (if (<= cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label))]
+                        [(eq? '= cond-operation)
+                         (if (= cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label) )])))
+      (begin 
+        (print-line
+         (string-append
+          "cmp " (format-operand cond-rhs) ", " (format-operand cond-lhs)))
+        (print-line 
+         (cond
+           [(eq? '< cond-operation)
+            (string-append "jl _" (symbol->string true-label))]
+           [(eq? '<= cond-operation)
+            (string-append "jle _" (symbol->string true-label))]
+           [(eq? '= cond-operation)
+            (string-append "je _" (symbol->string true-label))]))
+        (print-line
+         (string-append "jmp _" (symbol->string false-label))))))
+
+(define (compile-label name)
+  (print-line (string-append "$" (symbol->string name))))
+
+(define (compile-goto-label name)
+  (print-line (string-append "jmp _" (symbol->string name))))
+
+(define unique-label-index 0)
+(define (generate-unique-label)
+  (begin 
+    (set! unique-label-index (+ unique-label-index 1))
+    (string-append "label-" (number->string unique-label-index))))
+
+(define (compile-call-func func-ref)
+  (let ([new-label (generate-unique-label)])
+    (begin 
+      (print-line (string-append "pushl $" new-label))
+      (print-line "pushl %ebp")
+      (print-line "movl %esp, %ebp")
+      (print-line (string-append "jmp _" (symbol->string func-ref)))
+      (print-line (string-append new-label ":")))))
+
+(define (compile-return-from-func)
+  (begin
+    (print-line "movl %ebp, %esp")
+    (print-line "popl %ebp")
+    (print-line "ret")))
+
+(define (compile-tail-call-func func-ref)
+  (begin
+    (print-line "movl %ebp, %esp")
+    (print-line (string-append "jmp _" (symbol->string func-ref)))))
+
+(define (compile-print-t source)
+  (begin
+    (print-line (string-append "pushl " (format-operand source)))
+    (print-line "call print")
+    (print-line "addl $4,%esp")))
+
+(define (compile-allocate size num)
+  (begin
+    (print-line (string-append "pushl " (format-operand size)))
+    (print-line (string-append "pushl " (format-operand num)))
+    (print-line "call allocate")
+    (print-line "addl $8,%esp")))
+
+(define (compile-allocate-t size num)
+  (begin
+    (print-line (string-append "pushl " (format-operand size)))
+    (print-line (string-append "pushl " (format-operand num)))
+    (print-line "call allocate")
+    (print-line "addl $8,%esp")))
+
+(define (compile-array-error-t base index)
+  (begin
+    (print-line (string-append "pushl " (format-operand base)))
+    (print-line (string-append "pushl " (format-operand index)))
+    (print-line "call array-error")
+    (print-line "addl $8,%esp")))
+
+(define (compile-instruction instruction)
+  (type-case L1Instruction instruction
+    [assign-register (dest source)
+                     (compile-assign-register dest source)]
+    [read-memory (dest source-base source-offset)
+                 (compile-read-memory dest source-base source-offset)]
+    [update-memory (dest-base dest-offset source)
+                 (compile-update-memory dest-base dest-offset source)]
+    [update-aop (lhs operation rhs)
+                (compile-update-aop lhs operation rhs)]
+    [update-sop-sx (lhs operation rhs)
+                   (compile-update-sop-sx lhs operation rhs)]
+    [update-sop-num (lhs operation rhs)
+                    (compile-update-sop-sx lhs operation rhs)]
+    [save-comparison (dest lhs operation rhs)
+                     (compile-save-comparison dest lhs operation rhs)]
+    [label (name)
+           (compile-label name)]
+    [goto-label (name)
+                (compile-goto-label name)]
+    [cond-jump (cond-lhs cond-operation cond-rhs true-label false-label)
+               (compile-cond-jump cond-lhs cond-operation cond-rhs true-label false-label)]
+    [call-func (func-ref)
+               (compile-call-func func-ref)]
+    [tail-call-func (func-ref)
+                    (compile-tail-call-func func-ref)]
+    [return-from-func ()
+     (compile-return-from-func)]
+    [print-t (source)
+             (compile-print-t source)]
+    [allocate-t (size num)
+                (compile-allocate-t size num)]
+    [array-error-t (base index)
+                   (compile-array-error-t)]))  
+  
