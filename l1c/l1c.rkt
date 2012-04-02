@@ -319,13 +319,6 @@
     (print-line "call print")
     (print-line "addl $4,%esp")))
 
-(define (compile-allocate size num)
-  (begin
-    (print-line (string-append "pushl " (format-operand size)))
-    (print-line (string-append "pushl " (format-operand num)))
-    (print-line "call allocate")
-    (print-line "addl $8,%esp")))
-
 (define (compile-allocate-t size num)
   (begin
     (print-line (string-append "pushl " (format-operand size)))
