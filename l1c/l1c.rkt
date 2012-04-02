@@ -318,7 +318,7 @@
         (string-append "jmp " (symbol->string false-label))))]))
 
 (define (compile-label name)
-  (print-line (string-append name ":")))
+  (print-line (string-append (symbol->string name) ":")))
 
 (define (compile-goto-label name)
   (print-line (string-append "jmp " (symbol->string name))))
