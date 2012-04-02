@@ -1,10 +1,12 @@
 #!/bin/sh
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+getScriptPath() {
+	echo ${0%/*}/
+}
 
 # Compile
 cat header.s > prog.s
-$DIR/L1c-bin $1 >> prog.s
+$(getScriptPath)/L1c-bin $1 >> prog.s
 cat footer.s >> prog.s
 
 # Assemble
