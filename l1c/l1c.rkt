@@ -257,7 +257,7 @@
   (begin
     (print-line (string-append "pushl " (format-operand index)))
     (print-line (string-append "pushl " (format-operand base)))
-    (print-line "call array-error")
+    (print-line "call array_error")
     (print-line "addl $8,%esp")))
 
 ;;

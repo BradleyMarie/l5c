@@ -1,6 +1,8 @@
 (((esi <- 21) ;; loop termination variable = 10
   (ebx <- 3) ;; start counting at 1
   
+  (ecx <- :loop) ;;useless 
+
   :loop
   (cjump ebx <= esi :print :done)
   
