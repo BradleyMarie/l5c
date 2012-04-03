@@ -65,7 +65,7 @@
   (cond
     [(x? operand) (string-append "%" (symbol->string operand))]
     [(number? operand) (string-append "$" (number->string operand))]
-    [(l1c-label? operand) (string-append "$" (symbol->string operand))]))
+    [(l1c-label? operand) (symbol->string operand)]))
 
 (define (lowest-bits register)
   (cond
@@ -172,11 +172,11 @@
       (string-append "jmp "
                      (cond
                        [(eq? '< cond-operation)
-                        (if (< cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label))]
+                        (if (< cond-lhs cond-rhs) (format-operand true-label) (format-operand false-label))]
                        [(eq? '<= cond-operation)
-                        (if (<= cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label))]
+                        (if (<= cond-lhs cond-rhs) (format-operand true-label) (format-operand false-label))]
                        [(eq? '= cond-operation)
-                        (if (= cond-lhs cond-rhs) (symbol->string true-label) (symbol->string false-label) )])))]
+                        (if (= cond-lhs cond-rhs) (format-operand true-label) (format-operand false-label) )])))]
     [(num? cond-lhs)
      (begin 
        (print-line
@@ -185,13 +185,13 @@
        (print-line 
         (cond
           [(eq? '< cond-operation)
-           (string-append "jg " (symbol->string true-label))]
+           (string-append "jg " (format-operand true-label))]
           [(eq? '<= cond-operation)
-           (string-append "jge " (symbol->string true-label))]
+           (string-append "jge " (format-operand true-label))]
           [(eq? '= cond-operation)
-           (string-append "je " (symbol->string true-label))]))
+           (string-append "je " (format-operand true-label))]))
        (print-line
-        (string-append "jmp " (symbol->string false-label))))]
+        (string-append "jmp " (format-operand false-label))))]
     [else
      (begin 
        (print-line
@@ -200,19 +200,19 @@
        (print-line 
         (cond
           [(eq? '< cond-operation)
-           (string-append "jl " (symbol->string true-label))]
+           (string-append "jl " (format-operand true-label))]
           [(eq? '<= cond-operation)
-           (string-append "jle " (symbol->string true-label))]
+           (string-append "jle " (format-operand true-label))]
           [(eq? '= cond-operation)
-           (string-append "je " (symbol->string true-label))]))
+           (string-append "je " (format-operand true-label))]))
        (print-line
-        (string-append "jmp " (symbol->string false-label))))]))
+        (string-append "jmp " (format-operand false-label))))]))
 
 (define (compile-label name)
-  (print-line (string-append (symbol->string name) ":")))
+  (print-line (string-append (format-operand name) ":")))
 
 (define (compile-goto-label name)
-  (print-line (string-append "jmp " (symbol->string name))))
+  (print-line (string-append "jmp " (format-operand name))))
 
 (define unique-label-index 0)
 (define (generate-unique-label)
@@ -226,7 +226,7 @@
       (print-line (string-append "pushl $" new-label))
       (print-line "pushl %ebp")
       (print-line "movl %esp, %ebp")
-      (print-line (string-append "jmp " (symbol->string func-ref)))
+      (print-line (string-append "jmp " (format-operand func-ref)))
       (print-line (string-append new-label ":")))))
 
 (define (compile-return-from-func)
@@ -238,7 +238,7 @@
 (define (compile-tail-call-func func-ref)
   (begin
     (print-line "movl %ebp, %esp")
-    (print-line (string-append "jmp " (symbol->string func-ref)))))
+    (print-line (string-append "jmp " (format-operand func-ref)))))
 
 (define (compile-print-t source)
   (begin
