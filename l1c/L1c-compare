@@ -1,0 +1,44 @@
+#!/bin/sh
+
+getScriptPath() {
+	echo ${0%/*}/
+}
+
+testDirPath=$(getScriptPath)../1-test
+
+for L1Path in $( find $testDirPath -name '*L1' )
+do
+
+# Remove file extension
+testName=$(echo "$L1Path" | sed 's,.*/\([^/]*\)\..*,\1,g')
+outFile="$testDirPath/$testName"
+
+# Compile
+cat header.s > prog.s
+$(getScriptPath)/L1c-bin "$L1Path" >> prog.s
+cat footer.s >> prog.s
+
+# Assemble
+as -32 -o prog.o prog.s
+
+# Link
+gcc -m32 -o "$outFile.out" prog.o runtime/runtime.o
+
+# Run
+"./$outFile.out" > "$outFile.txt"
+
+# Compare
+if cmp -s $outFile.txt $outFile.res; then
+  : # files are the same
+  printf "%20s: SUCCESS\n" $testName
+else
+  : # files are different
+  printf "%20s: FAILED\n" $testName
+  diff "$outFile.txt" "$outFile.res"
+fi
+
+# Cleanup
+rm prog.o "$outFile.out" "$outFile.txt"
+
+done
+
