@@ -6,7 +6,7 @@ getScriptPath() {
 
 # Compile
 cat header.s > prog.s
-$(getScriptPath)/L1c-bin $1 >> prog.s
+$(getScriptPath)/L1c-bin "$1" >> prog.s
 cat footer.s >> prog.s
 
 # Assemble
