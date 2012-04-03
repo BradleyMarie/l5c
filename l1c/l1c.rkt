@@ -210,7 +210,7 @@
       (string-append "subl " (format-operand rhs) ", " (format-operand lhs))]
      [(eq? '*= operation)
       (string-append "imul " (format-operand rhs) ", " (format-operand lhs))]
-     [(eq? '/= operation)
+     [(eq? '&= operation)
       (string-append "andl " (format-operand rhs) ", " (format-operand lhs))])))
 
 (define (compile-update-sop-sx lhs operation rhs)
