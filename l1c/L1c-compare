@@ -38,7 +38,7 @@ else
 fi
 
 # Cleanup
-rm prog.o "$outFile.out" "$outFile.txt"
+rm prog.s prog.o "$outFile.out" "$outFile.txt"
 
 done
 
