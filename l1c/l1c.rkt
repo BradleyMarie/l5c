@@ -65,10 +65,7 @@
   (cond
     [(x? operand) (string-append "%" (symbol->string operand))]
     [(number? operand) (string-append "$" (number->string operand))]
-    [(l1c-label? operand) (string-append "$" (symbol->string operand))]))
-
-(define (format-label label)
-  (symbol->string label))
+    [(l1c-label? operand) (symbol->string operand)]))
 
 (define (lowest-bits register)
   (cond
@@ -175,11 +172,11 @@
       (string-append "jmp "
                      (cond
                        [(eq? '< cond-operation)
-                        (if (< cond-lhs cond-rhs) (format-label true-label) (format-label false-label))]
+                        (if (< cond-lhs cond-rhs) (format-operand true-label) (format-operand false-label))]
                        [(eq? '<= cond-operation)
-                        (if (<= cond-lhs cond-rhs) (format-label true-label) (format-label false-label))]
+                        (if (<= cond-lhs cond-rhs) (format-operand true-label) (format-operand false-label))]
                        [(eq? '= cond-operation)
-                        (if (= cond-lhs cond-rhs) (format-label true-label) (format-label false-label) )])))]
+                        (if (= cond-lhs cond-rhs) (format-operand true-label) (format-operand false-label) )])))]
     [(num? cond-lhs)
      (begin 
        (print-line
@@ -188,13 +185,13 @@
        (print-line 
         (cond
           [(eq? '< cond-operation)
-           (string-append "jg " (format-label true-label))]
+           (string-append "jg " (format-operand true-label))]
           [(eq? '<= cond-operation)
-           (string-append "jge " (format-label true-label))]
+           (string-append "jge " (format-operand true-label))]
           [(eq? '= cond-operation)
-           (string-append "je " (format-label true-label))]))
+           (string-append "je " (format-operand true-label))]))
        (print-line
-        (string-append "jmp " (format-label false-label))))]
+        (string-append "jmp " (format-operand false-label))))]
     [else
      (begin 
        (print-line
@@ -203,19 +200,19 @@
        (print-line 
         (cond
           [(eq? '< cond-operation)
-           (string-append "jl " (format-label true-label))]
+           (string-append "jl " (format-operand true-label))]
           [(eq? '<= cond-operation)
-           (string-append "jle " (format-label true-label))]
+           (string-append "jle " (format-operand true-label))]
           [(eq? '= cond-operation)
-           (string-append "je " (format-label true-label))]))
+           (string-append "je " (format-operand true-label))]))
        (print-line
-        (string-append "jmp " (format-label false-label))))]))
+        (string-append "jmp " (format-operand false-label))))]))
 
 (define (compile-label name)
-  (print-line (string-append (format-label name) ":")))
+  (print-line (string-append (format-operand name) ":")))
 
 (define (compile-goto-label name)
-  (print-line (string-append "jmp " (format-label name))))
+  (print-line (string-append "jmp " (format-operand name))))
 
 (define unique-label-index 0)
 (define (generate-unique-label)
@@ -223,25 +220,39 @@
     (set! unique-label-index (+ unique-label-index 1))
     (string-append "label_" (number->string unique-label-index))))
 
-(define (compile-call-func func-ref)
+(define (compile-call-func-label func-ref)
   (let ([new-label (generate-unique-label)])
     (begin 
       (print-line (string-append "pushl $" new-label))
       (print-line "pushl %ebp")
       (print-line "movl %esp, %ebp")
-      (print-line (string-append "jmp " (format-label func-ref)))
+      (print-line (string-append "jmp " (format-operand func-ref)))
       (print-line (string-append new-label ":")))))
+
+(define (compile-tail-call-func-label func-ref)
+  (begin
+    (print-line "movl %ebp, %esp")
+    (print-line (string-append "jmp " (format-operand func-ref)))))
+
+(define (compile-call-func-x func-ref)
+  (let ([new-label (generate-unique-label)])
+    (begin 
+      (print-line (string-append "pushl $" new-label))
+      (print-line "pushl %ebp")
+      (print-line "movl %esp, %ebp")
+      (print-line (string-append "jmp *" (format-operand func-ref)))
+      (print-line (string-append new-label ":")))))
+
+(define (compile-tail-call-func-x func-ref)
+  (begin
+    (print-line "movl %ebp, %esp")
+    (print-line (string-append "jmp *" (format-operand func-ref)))))
 
 (define (compile-return-from-func)
   (begin
     (print-line "movl %ebp, %esp")
     (print-line "popl %ebp")
     (print-line "ret")))
-
-(define (compile-tail-call-func func-ref)
-  (begin
-    (print-line "movl %ebp, %esp")
-    (print-line (string-append "jmp " (format-label func-ref)))))
 
 (define (compile-print-t source)
   (begin
@@ -323,15 +334,15 @@
     
     ; (call u) ;; call a function
     [(list 'call (? l1-label? func-ref))
-     (compile-call-func (parse-l1-label func-ref))]
+     (compile-call-func-label (parse-l1-label func-ref))]
     [(list 'call (? x? func-ref))
-     (compile-call-func func-ref)]
+     (compile-call-func-x func-ref)]
     
     ; (tail-call u) ;; tail call a function
     [(list 'tail-call (? l1-label? func-ref))
-     (compile-tail-call-func (parse-l1-label func-ref))]
+     (compile-tail-call-func-label (parse-l1-label func-ref))]
     [(list 'tail-call (? x? func-ref))
-     (compile-tail-call-func func-ref)]
+     (compile-tail-call-func-x func-ref)]
     
     ; (return) ;; return from a function 
     [(list 'return)
