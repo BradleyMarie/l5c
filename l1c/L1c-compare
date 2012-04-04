@@ -16,24 +16,12 @@ do
 # Remove file extension
 testName=$(echo "$L1Path" | sed 's,.*/\([^/]*\)\..*,\1,g')
 outFile="$testDirPath/$testName"
-echo "$L1Path"
 
-#preprocess 
-./L1c-preprocessor "$1" > "$$".L1
-
-# Compile
-cat header.s > prog.s
-$(getScriptPath)/L1c-bin "$$".L1 >> prog.s
-cat footer.s >> prog.s
-
-# Assemble
-as -32 -o prog.o prog.s
-
-# Link
-gcc -m32 -o "$outFile.out" prog.o runtime/runtime.o
+#compile
+./L1c "$L1Path"
 
 # Run
-"./$outFile.out" > "$outFile.txt"
+./a.out > "$outFile.txt"
 
 # Compare
 if cmp -s $outFile.txt $outFile.res; then
@@ -46,7 +34,7 @@ else
 fi
 
 # Cleanup
-rm prog.s prog.o "$outFile.out" "$outFile.txt" "$$".L1
+rm a.out "$outFile.txt"
 
 done
 
