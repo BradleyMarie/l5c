@@ -8,19 +8,22 @@ getScriptPath() {
 	echo ${0%/*}/
 }
 
+#preprocess 
+./L1c-preprocessor "$1" > "$$".L1
+
 # Compile
-cat header.s > prog.s
-$(getScriptPath)/L1c-bin "$1" >> prog.s
-cat footer.s >> prog.s
+
+cat header.s > "$$".s
+$(getScriptPath)/L1c-bin "$1" >> "$$".s
+cat footer.s >> "$$".s
 
 # Assemble
-as -32 -o prog.o prog.s
+as -32 -o "$$".o "$$".s
 
 # Link
-gcc -m32 -o a.out prog.o runtime/runtime.o
+gcc -m32 -o a.out "$$".o runtime/runtime.o
 
 # Cleanup
-rm prog.s prog.o
+rm "$$".s "$$".o "$$".L1
 
 IFS=$SAVEIFS
-

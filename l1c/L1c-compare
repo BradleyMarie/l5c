@@ -18,9 +18,12 @@ testName=$(echo "$L1Path" | sed 's,.*/\([^/]*\)\..*,\1,g')
 outFile="$testDirPath/$testName"
 echo "$L1Path"
 
+#preprocess 
+./L1c-preprocessor "$1" > "$$".L1
+
 # Compile
 cat header.s > prog.s
-$(getScriptPath)/L1c-bin "$L1Path" >> prog.s
+$(getScriptPath)/L1c-bin "$$".L1 >> prog.s
 cat footer.s >> prog.s
 
 # Assemble
@@ -43,9 +46,8 @@ else
 fi
 
 # Cleanup
-rm prog.s prog.o "$outFile.out" "$outFile.txt"
+rm prog.s prog.o "$outFile.out" "$outFile.txt" "$$".L1
 
 done
 
 IFS=$SAVEIFS
-
