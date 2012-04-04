@@ -9,7 +9,8 @@
   (eax <- edi)
   (ebx <- eax)
   (ebx *= 2)
-  (call :sos)
+  (edx <- :sos)
+  (call edx)
 
   ;; encode result
   (eax <<= 1)
