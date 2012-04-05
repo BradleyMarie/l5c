@@ -1,0 +1,17 @@
+(((mem ebp -4) <- 2)
+ (y <- 3)
+
+ (s0 <- (mem ebp -4))
+ (s0 *= y)
+ ((mem ebp -4) <- s0)
+
+ (s1 <- (mem ebp -4))
+ (s1 <<= 1)
+ ((mem ebp -4) <- s1)
+
+ (s2 <- (mem ebp -4))
+ (s2 += 1)
+ ((mem ebp -4) <- s2)
+
+ (s3 <- (mem ebp -4))
+ (eax <- (print s3)))
