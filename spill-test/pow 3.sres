@@ -14,4 +14,4 @@
 
  :done
  (eax <- (mem ebp -4))
- (return)) product -4 s
+ (return))

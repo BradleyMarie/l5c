@@ -21,4 +21,4 @@
  ((mem ebp -4) <- s2)
 
  (s3 <- (mem ebp -4))
- (eax <- (print s3))) temp -4 s
+ (eax <- (print s3)))

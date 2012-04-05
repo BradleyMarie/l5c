@@ -5,4 +5,4 @@
  (perimeter <- length)
  (perimeter += height)
  (eax <- perimeter)
- (return))
+ (return)) length -4 s
