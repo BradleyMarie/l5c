@@ -1,22 +1,5 @@
-(((i <- 0)
-
-  :compare
-  (cjump i < 5 :funcCall :done)
-
-  :funcCall
-  (eax <- i)
-  (call :pow2)
-  (eax <<= 1)
-  (eax += 1)
-  (eax <- (print eax))
-  (i += 1)
-  (goto :compare)
-
-  :done)
-
- (:pow2
-  (b <- 1)
-  (c <- eax)
-  (b <<= c)
-  (eax <- b)
-  (return)))
+((b <- 1)
+ (c <- eax)
+ (b <<= c)
+ (eax <- b)
+ (return))

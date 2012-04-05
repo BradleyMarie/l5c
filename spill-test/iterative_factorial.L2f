@@ -1,21 +1,13 @@
-(((eax <- 5) ;; compute factorial of 1
-  (call :factorial)
-  (eax <<= 1)
-  (eax += 1)
-  (eax <- (print eax)))
-  
-  (:factorial
-   
-   (product <- 1)
+((product <- 1)
 
-   :loop
-   (cjump 0 < eax :do_work :done)
+ :loop
+ (cjump 0 < eax :do_work :done)
    
-   :do_work
-   (product *= eax) ;; do multiplication
-   (eax -= 1) ;; decrement counter
-   (goto :loop)   
+ :do_work
+ (product *= eax) ;; do multiplication
+ (eax -= 1) ;; decrement counter
+ (goto :loop)   
 
-   :done
-   (eax <- product)
-   (return)))
+ :done
+ (eax <- product)
+ (return))

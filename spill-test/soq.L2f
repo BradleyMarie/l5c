@@ -1,52 +1,21 @@
-(((i <- 0)
+((a <- eax)
+ (a *= a)
+ (a *= a)
 
-  :compare
-  (cjump i < 5 :funcCall :done)
+ (b <- ebx)
+ (b *= b)
+ (b *= b)
 
-  :funcCall
+ (c <- ecx)
+ (c *= c)
+ (c *= c)
 
-  ;;generate args and run function
-  (eax <- i)
-  (ebx <- i)
-  (ecx <- i)
-  (edx <- i)
-  (ebx *= 2)
-  (ecx *= 3)
-  (edx *= 4)
+ (d <- edx)
+ (d *= d)
+ (d *= d)
 
-  (call :soc)
-
-  ;; encode result
-  (eax <<= 1)
-  (eax += 1)
-  
-  ;; print
-  (eax <- (print eax))
-  
-  (i += 1)
-  (goto :compare)
-
-  :done)
-
- (:soc
-  (a <- eax)
-  (a *= a)
-  (a *= a)
-
-  (b <- ebx)
-  (b *= b)
-  (b *= b)
-
-  (c <- ecx)
-  (c *= c)
-  (c *= c)
-
-  (d <- edx)
-  (d *= d)
-  (d *= d)
-
-  (a += b)
-  (a += c)
-  (a += d)
-  (eax <- a)
-  (return)))
+ (a += b)
+ (a += c)
+ (a += d)
+ (eax <- a)
+ (return))

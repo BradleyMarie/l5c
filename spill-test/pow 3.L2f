@@ -1,31 +1,14 @@
-(((edi <- 0)
+((product <- 1)
+ (count <- eax)
 
-  :compare
-  (cjump edi < 5 :funcCall :exit)
+ :comp
+ (cjump 0 < count :do :done)
 
-  :funcCall
-  (eax <- edi)
-  (call :pow3)
-  (eax <<= 1)
-  (eax += 1)
-  (eax <- (print eax))
-  (edi += 1)
-  (goto :compare)
+ :do
+ (product *= 3)
+ (count -= 1)
+ (goto :comp)
 
-  :exit)
-
- (:pow3
-  (product <- 1)
-  (count <- eax)
-
-  :comp
-  (cjump 0 < count :do :done)
-
-  :do
-  (product *= 3)
-  (count -= 1)
-  (goto :comp)
-
-  :done
-  (eax <- product)
-  (return)))
+ :done
+ (eax <- product)
+ (return))

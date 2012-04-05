@@ -1,34 +1,7 @@
-(((i <- 0)
-
-  :compare
-  (cjump i < 5 :funcCall :done)
-
-  :funcCall
-
-  ;;generate args and run function
-  (eax <- i)
-  (ebx <- eax)
-  (ebx *= 2)
-  (edx <- :sos)
-  (call edx)
-
-  ;; encode result
-  (eax <<= 1)
-  (eax += 1)
-  
-  ;; print
-  (eax <- (print eax))
-  
-  (i += 1)
-  (goto :compare)
-
-  :done)
-
- (:sos
-  (c <- eax)
-  (b <- ebx)
-  (b *= b)
-  (c *= c)
-  (c += b)
-  (eax <- c)
-  (return)))
+((c <- eax)
+ (b <- ebx)
+ (b *= b)
+ (c *= c)
+ (c += b)
+ (eax <- c)
+ (return))

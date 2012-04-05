@@ -1,27 +1,10 @@
-(((i <- 0)
-
-  :compare
-  (cjump i < 5 :funcCall :done)
-
-  :funcCall
-  (eax <- i)
-  (call :strange)
-  (eax <<= 1)
-  (eax += 1)
-  (eax <- (print eax))
-  (i += 1)
-  (goto :compare)
-
-  :done)
-
- (:strange
-  (a <- eax)
-  (a *= 3)
-  (a <<= 2)
-  (a -= 1137)
-  (a &= 132981723)
-  (a += a)
-  (a <<= 1)
-  (a -= 10)
-  (eax <- a)
-  (return)))
+((a <- eax)
+ (a *= 3)
+ (a <<= 2)
+ (a -= 1137)
+ (a &= 132981723)
+ (a += a)
+ (a <<= 1)
+ (a -= 10)
+ (eax <- a)
+ (return))

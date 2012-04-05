@@ -1,4 +1,4 @@
-(((i <- 1)
+((i <- 1)
   (temp <- 1)
 
   :compare
@@ -12,4 +12,4 @@
   :done
   (temp <<= 1)
   (temp += 1)
-  (eax <- (print temp))))
+  (eax <- (print temp)))
