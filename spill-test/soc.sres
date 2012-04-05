@@ -1,0 +1,21 @@
+((a <- eax)
+ (a *= a)
+ (a *= a)
+
+ ((mem ebp -4) <- ebx)
+ (s0 <- (mem ebp -4))
+ (s0 *= s0)
+ ((mem ebp -4) <- s0)
+ (s1 <- (mem ebp -4))
+ (s1 *= s1)
+ ((mem ebp -4) <- s1)
+
+ (c <- ecx)
+ (c *= c)
+ (c *= c)
+
+ (s2 <- (mem ebp -4))
+ (a += s2)
+ (a += c)
+ (eax <- a)
+ (return)

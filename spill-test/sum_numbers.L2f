@@ -4,4 +4,4 @@
  (a *= b)
  (a >>= 1)
  (eax <- a)
- (return))
+ (return)) b -4 s

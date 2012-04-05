@@ -18,4 +18,5 @@
  (a += c)
  (a += d)
  (eax <- a)
- (return))
+ (return)) a -4 s
+

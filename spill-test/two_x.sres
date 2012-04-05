@@ -1,0 +1,7 @@
+((b <- 1)
+ ((mem ebp -4) <- eax)
+ (s0 <- (mem ebp 4))
+ (b <<= s0)
+ (eax <- b)
+ (return))
+

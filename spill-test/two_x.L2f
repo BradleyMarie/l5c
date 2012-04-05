@@ -2,4 +2,4 @@
  (c <- eax)
  (b <<= c)
  (eax <- b)
- (return))
+ (return)) c -4 s

@@ -6,4 +6,4 @@
  (a <<= 1)
  (a -= 10)
  (eax <- a)
- (return))
+ (return)) a -4 s
