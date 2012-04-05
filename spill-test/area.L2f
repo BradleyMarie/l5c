@@ -3,4 +3,4 @@
  (x *= y)
  (x <<= 1)
  (x += 1)
- (eax <- (print x)))
+ (eax <- (print x))) x -4 s

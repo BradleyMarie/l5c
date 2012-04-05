@@ -1,0 +1,12 @@
+(((mem ebp -4) <- eax)
+ (height <- ebx)
+
+ (s0 <- (mem ebp -4))
+ (s0 *= 2)
+ ((mem ebp -4) <- s0)
+
+ (height *= 2)
+ (perimeter <- (mem ebp -4))
+ (perimeter += height)
+ (eax <- perimeter)
+ (return))

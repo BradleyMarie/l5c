@@ -1,0 +1,24 @@
+((i <- 1)
+ ((mem ebp -4) <- 1)
+
+ :compare
+ (cjump i < 8 :double :done)
+  
+ :double
+ (s0 <- (mem ebp -4))
+ (s0 *= 2)
+ ((mem ebp -4) <- s0)
+ (i += 1)
+ (goto :compare)
+
+ :done
+ (s1 <- (mem ebp -4))
+ (s1 <<= 1)
+ ((mem ebp -4) <- s1)
+
+ (s2 <- (mem ebp -4))
+ (s2 += 1)
+ ((mem ebp -4) <- s2)
+
+ (s3 <- (mem ebp -4))
+ (eax <- (print s3)))

@@ -1,0 +1,15 @@
+(((mem ebp -4) <- 1)
+
+ :loop
+ (cjump 0 < eax :do_work :done)
+   
+ :do_work
+ (s0 <- (mem ebp -4))
+ (s0 *= eax)
+ ((mem ebp -4) <- s0)
+ (eax -= 1)
+ (goto :loop)   
+
+ :done
+ (eax <- (mem ebp -4))
+ (return))

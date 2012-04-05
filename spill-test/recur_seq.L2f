@@ -16,4 +16,4 @@
 
  :end
  (eax <- num1)
- (return))
+ (return)) num2 -4 s

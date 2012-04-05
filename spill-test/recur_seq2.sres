@@ -1,5 +1,5 @@
 ((num1 <- 5)
- (num2 <- 6)
+ ((mem ebp -4) <- 6)
  (count <- eax)
 
  :loop_und
@@ -7,14 +7,14 @@
 
  :cont
  (temp <- num1)
- (temp += num2)
- (temp += num2)
- (num1 <- num2)
- (num2 <- temp)
+ (temp += (mem ebp -4))
+ (temp += (mem ebp -4))
+ (num1 <- (mem ebp -4))
+ ((mem ebp -4) <- temp)
 
  (count -= 1)
  (goto :loop_und)
 
  :end
  (eax <- num1)
- (return)) num2 -4 s
+ (return))

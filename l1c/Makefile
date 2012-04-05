@@ -1,6 +1,7 @@
 all:
 	make -C runtime
 	g++ -Wall -Werror -O2 -o L1c-preprocessor L1c-preprocessor.cpp
+	g++ -Wall -Werror -O2 -o L1c-postprocessor L1c-postprocessor.cpp
 	raco exe -o L1c-bin l1c.rkt
 
 clean:

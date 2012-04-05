@@ -1,15 +1,15 @@
 ((i <- 1)
-  (temp <- 1)
+ (temp <- 1)
 
-  :compare
-  (cjump i < 8 :double :done)
-   
-  :double
-  (temp *= 2)
-  (i += 1)
-  (goto :compare)
+ :compare
+ (cjump i < 8 :double :done)
+  
+ :double
+ (temp *= 2)
+ (i += 1)
+ (goto :compare)
 
-  :done
-  (temp <<= 1)
-  (temp += 1)
-  (eax <- (print temp)))
+ :done
+ (temp <<= 1)
+ (temp += 1)
+ (eax <- (print temp))) temp -4 s

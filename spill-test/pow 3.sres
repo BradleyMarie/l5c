@@ -1,0 +1,17 @@
+(((mem ebp -4) <- 1)
+ (count <- eax)
+
+ :comp
+ (cjump 0 < count :do :done)
+
+ :do
+ (s0 <- (mem ebp -4))
+ (s0 *= 3)
+ ((mem ebp -4) <- s0)
+
+ (count -= 1)
+ (goto :comp)
+
+ :done
+ (eax <- (mem ebp -4))
+ (return))

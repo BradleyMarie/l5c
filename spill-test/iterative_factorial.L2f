@@ -10,4 +10,4 @@
 
  :done
  (eax <- product)
- (return))
+ (return)) product -4 s
