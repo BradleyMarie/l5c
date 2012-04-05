@@ -15,5 +15,7 @@
   :done)
 
  (:negate
-  (eax *= -1)
+  (temp <- eax)
+  (temp *= -1)
+  (eax <- temp)
   (return)))

@@ -1,28 +1,6 @@
-(((edi <- 0)
-
-  :compare
-  (cjump edi < 5 :funcCall :done)
-
-  :funcCall
-
-  ;;generate args and run function
-  (eax <- edi)
-  (ebx <- eax)
-  (ebx *= 2)
-  (call :area)
-
-  ;; encode result
-  (eax <<= 1)
-  (eax += 1)
-  
-  ;; print
-  (eax <- (print eax))
-  
-  (edi += 1)
-  (goto :compare)
-
-  :done)
-
- (:area
-  (eax *= ebx)
-  (return)))
+(((x <- 2)
+ (y <- 3)
+ (x *= y)
+ (x <<= 1)
+ (x += 1)
+ (eax <- (print x))))

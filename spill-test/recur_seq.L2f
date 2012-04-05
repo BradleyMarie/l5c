@@ -22,21 +22,22 @@
   :done)
 
  (:soc
-  (ebx <- 1)
-  (ecx <- 1)
+  (num1 <- 1)
+  (num2 <- 1)
+  (count <- eax)
 
   :loop_und
-  (cjump 0 < eax :cont :end)
+  (cjump 0 < count :cont :end)
 
   :cont
-  (edx <- ebx)
-  (edx += ecx)
-  (ebx <- ecx)
-  (ecx <- edx)
+  (temp <- num1)
+  (temp += num2)
+  (num1 <- num2)
+  (num2 <- temp)
 
-  (eax -= 1)
+  (count -= 1)
   (goto :loop_und)
 
   :end
-  (eax <- ebx)
+  (eax <- num1)
   (return)))
