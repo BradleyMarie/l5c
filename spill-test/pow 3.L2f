@@ -15,17 +15,17 @@
   :exit)
 
  (:pow3
-  (ebx <- 1)
-  (ecx <- eax)
+  (product <- 1)
+  (count <- eax)
 
   :comp
-  (cjump 0 < eax :do :done)
+  (cjump 0 < count :do :done)
 
   :do
-  (ebx *= 3)
-  (eax -= 1)
+  (product *= 3)
+  (count -= 1)
   (goto :comp)
 
   :done
-  (eax <- ebx)
+  (eax <- product)
   (return)))
