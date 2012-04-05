@@ -1,25 +1,27 @@
-(((edi <- 0)
+(((i <- 0)
 
   :compare
-  (cjump edi < 5 :funcCall :done)
+  (cjump i < 5 :funcCall :done)
 
   :funcCall
-  (eax <- edi)
+  (eax <- i)
   (call :strange)
   (eax <<= 1)
   (eax += 1)
   (eax <- (print eax))
-  (edi += 1)
+  (i += 1)
   (goto :compare)
 
   :done)
 
  (:strange
-  (eax *= 3)
-  (eax <<= 2)
-  (eax -= 1137)
-  (eax &= 132981723)
-  (eax += eax)
-  (eax <<= 1)
-  (eax -= 10)
+  (a <- eax)
+  (a *= 3)
+  (a <<= 2)
+  (a -= 1137)
+  (a &= 132981723)
+  (a += a)
+  (a <<= 1)
+  (a -= 10)
+  (eax <- a)
   (return)))
