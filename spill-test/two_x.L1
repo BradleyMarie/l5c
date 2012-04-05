@@ -1,0 +1,22 @@
+(((edi <- 0)
+
+  :compare
+  (cjump edi < 5 :funcCall :done)
+
+  :funcCall
+  (eax <- edi)
+  (call :pow2)
+  (eax <<= 1)
+  (eax += 1)
+  (eax <- (print eax))
+  (edi += 1)
+  (goto :compare)
+
+  :done)
+
+ (:pow2
+  (ebx <- 1)
+  (ecx <- eax)
+  (ebx <<= ecx)
+  (eax <- ebx)
+  (return)))

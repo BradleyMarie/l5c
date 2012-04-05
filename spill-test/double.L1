@@ -1,0 +1,22 @@
+(((eax <- 3) ;; start at 1 ...
+  (ebx <- 17) ;; and double it until we reach 8 
+  
+  ; decode
+  (eax -= 1)
+  (eax >>= 1)
+  
+  (ebx -= 1)
+  (ebx >>= 1)
+
+  :compare
+  (cjump eax < ebx :double :done)
+   
+  :double
+  (eax <<= 1)
+  (goto :compare)
+
+  :done
+  ; encode
+  (eax <<= 1)
+  (eax += 1)
+  (eax <- (print eax))))

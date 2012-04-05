@@ -1,0 +1,43 @@
+(((edi <- 0)
+
+  :compare
+  (cjump edi < 8 :funcCall :done)
+
+  :funcCall
+
+  ;; generate args and run function
+  (eax <- edi)
+  (call :soc)
+
+  ;; encode result
+  (eax <<= 1)
+  (eax += 1)
+  
+  ;; print
+  (eax <- (print eax))
+  
+  (edi += 1)
+  (goto :compare)
+
+  :done)
+
+ (:soc
+  (ebx <- 5)
+  (ecx <- 6)
+
+  :loop_und
+  (cjump 0 < eax :cont :end)
+
+  :cont
+  (edx <- ebx)
+  (edx += ecx)
+  (edx += ecx)
+  (ebx <- ecx)
+  (ecx <- edx)
+
+  (eax -= 1)
+  (goto :loop_und)
+
+  :end
+  (eax <- ebx)
+  (return)))
