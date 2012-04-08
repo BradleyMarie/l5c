@@ -17,6 +17,11 @@
 ;; Helper Functions
 ;;
 
+(define (print-line string)
+  (begin
+    (display string)
+    (newline)))
+
 (define (replace-list-elements element find-value replace-value)
   (cond
     [(eq? element find-value) replace-value]
@@ -26,16 +31,11 @@
 (define (print-modified-list find-value replace-value original-list)
   (print-line (map (lambda (element) (replace-list-elements element find-value replace-value)) original-list)))
 
-(define (print-line string)
-  (begin
-    (display string)
-    (newline)))
-
 (define (read-memory variable offset)
-  (print-line (string-append "(" variable " <- (mem ebp " offset "))")))
+  (printf "(~a <- (mem ebp ~a))\n" variable offset ))
 
 (define (write-memory variable offset)
-  (print-line (string-append "((mem ebp " offset ") <- " variable ")")))
+  (printf "((mem ebp ~a) <- ~a)\n" offset variable ))
 
 (define prefix-index -1)  ;; Number
 (define prefix (void))       ;; String
@@ -69,20 +69,20 @@
 (define (spill-from-memory x n4)
   (let ([new-variable (spill-variable)])
     (begin
-      (print-line (string-append "(" new-variable " <- (mem " (symbol->string x) " " (number->string n4) "))"))
+      (printf "(~a <- (mem ~a ~a))\n" new-variable x n4)
       (write-memory new-variable offset))))
 
 (define (spill-to-memory x n4)
   (let ([new-variable (spill-variable)])
     (begin
       (read-memory new-variable offset)
-      (print-line (string-append "((mem " (symbol->string x) " " (number->string n4) ") <- " new-variable ")")))))
+      (printf "((mem ~a ~a) <- ~a)\n" x n4 new-variable))))
 
 (define (write-to-x dest)
-  (print-line (string-append "(" (symbol->string dest) " <- (mem ebp " offset "))")))
+  (printf "(~a <- (mem ebp ~a))\n" dest offset))
 
 (define (read-from-s source)
-  (print-line (string-append "((mem ebp " offset ") <- " (symbol->string source) ")")))
+  (printf "((mem ebp ~a) <- ~a)\n" offset source))
 
 ;;
 ;; Parser
@@ -161,10 +161,11 @@
   (command-line
    #:args (filename) filename))
 
-(define input-file (call-with-input-file filename read))
-
-(begin
-  (set! old-variable (second input-file))
-  (set! offset (third input-file))
-  (set! prefix (fourth input-file))
-  (spill-function (first input-file)))
+(call-with-input-file filename
+  (lambda (p)
+    (begin
+      (let ([sexpr (read p)])
+        (set! old-variable (read p))
+        (set! offset (number->string (read p)))
+        (set! prefix (symbol->string (read p)))
+        (spill-function sexpr)))))
