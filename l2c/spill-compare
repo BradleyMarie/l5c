@@ -21,13 +21,14 @@ outFile="$testDirPath/$testName"
 ./spill "$spillPath" > "$outFile.txt"
 
 # Compare
-if cmp -s $outFile.txt $outFile.sres; then
+if diff -wB "$outFile.txt" "$outFile.sres" > /dev/null
+then
   : # files are the same
-  printf "%20s: SUCCESS\n" $testName
+  printf "\n%20s: SUCCESS\n" $testName
 else
   : # files are different
-  printf "%20s: FAILED\n" $testName
-  diff "$outFile.txt" "$outFile.sres"
+  printf "\n%20s: FAILED\n" $testName
+  diff -wBy -W 70 --suppress-common-lines "$outFile.txt" "$outFile.sres"
 fi
 
 # Cleanup
