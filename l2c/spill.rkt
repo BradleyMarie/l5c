@@ -148,9 +148,11 @@
          (spill-read sexpr) (print-line sexpr))]))
 
 (define (spill-function function)
+  (begin
     (map (lambda (instruction)
          (spill-instruction instruction))
-       function))
+       function)
+    (void)))
 
 ;;
 ;; Compile the file specified on the command line
