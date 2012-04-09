@@ -149,9 +149,11 @@
 
 (define (spill-function function)
   (begin
+    (printf "(")
     (map (lambda (instruction)
          (spill-instruction instruction))
        function)
+    (printf ")")
     (void)))
 
 ;;
