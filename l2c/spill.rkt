@@ -17,10 +17,12 @@
 ;; Helper Functions
 ;;
 
+(define is-last-instruction #f)
+
 (define (print-line string)
   (begin
     (display string)
-    (newline)))
+    (if (not is-last-instruction) (newline) (void))))
 
 (define (replace-list-elements element find-value replace-value)
   (cond
@@ -145,14 +147,20 @@
     ; (cjump t cmp t label label) ;; conditional jump
     [(list 'cjump lhs (? cmp? cmp) rhs true-label false-label)
      (if (or (eq? lhs old-variable) (eq? rhs old-variable))
-         (spill-read sexpr) (print-line sexpr))]))
+         (spill-read sexpr) (print-line sexpr))]
+    
+    [_ (print-line sexpr)]))
 
 (define (spill-function function)
   (begin
     (printf "(")
     (map (lambda (instruction)
-         (spill-instruction instruction))
-       function)
+           (begin
+             (if (eq? instruction (last function))
+                 (set! is-last-instruction #t)
+                 (void))
+             (spill-instruction instruction)))
+         function)
     (printf ")")
     (void)))
 
