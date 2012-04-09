@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# Play nice with spaces in filenames
+SAVEIFS=$IFS
+IFS=$(echo -en "\n\b")
+
+getScriptPath() {
+	echo ${0%/*}/
+}
+
+testDirPath=$(getScriptPath)../spill-test
+
+for spillPath in $( find $testDirPath -name '*L2f' )
+do
+
+# Remove file extension
+testName=$(echo "$spillPath" | sed 's,.*/\([^/]*\)\..*,\1,g')
+outFile="$testDirPath/$testName"
+
+# Spill
+./spill "$spillPath" > "$outFile.txt"
+
+# Compare
+if cmp -s $outFile.txt $outFile.sres; then
+  : # files are the same
+  printf "%20s: SUCCESS\n" $testName
+else
+  : # files are different
+  printf "%20s: FAILED\n" $testName
+  diff "$outFile.txt" "$outFile.sres"
+fi
+
+# Cleanup
+rm "$outFile.txt"
+
+done
+
+IFS=$SAVEIFS
