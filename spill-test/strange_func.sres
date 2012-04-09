@@ -1,4 +1,4 @@
-(((mem -4 ebp) <- eax)
+(((mem ebp -4) <- eax)
 
  (s0 <- (mem ebp -4))
  (s0 *= 100)
@@ -9,7 +9,7 @@
  ((mem ebp -4) <- s1)
 
  (s2 <- (mem ebp -4))
- (s2 += a)  
+ (s2 += s2)  
  ((mem ebp -4) <- s2)
 
  (s3 <- (mem ebp -4))

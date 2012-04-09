@@ -1,4 +1,4 @@
-(((mem -4 ebp) <- eax)
+(((mem ebp -4) <- eax)
 
  (s0 <- (mem ebp -4))
  (s0 *= 3)
@@ -30,5 +30,5 @@
 
  (eax <- (mem ebp -4))
 
- (return)
+ (return))
 

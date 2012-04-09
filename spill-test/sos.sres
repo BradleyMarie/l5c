@@ -7,4 +7,4 @@
  (s1 <- (mem ebp -4))
  (c += s1)
  (eax <- c)
- (return)
+ (return))

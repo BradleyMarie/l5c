@@ -7,8 +7,10 @@
 
  :cont
  (temp <- num1)
- (temp += (mem ebp -4))
- (temp += (mem ebp -4))
+ (s0 <- (mem ebp -4))
+ (temp += s0)
+ (s1 <- (mem ebp -4))
+ (temp += s1)
  (num1 <- (mem ebp -4))
  ((mem ebp -4) <- temp)
 
