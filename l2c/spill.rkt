@@ -72,12 +72,12 @@
   (match sexpr
     ; (eax <- (print t))
     [`(eax <- (print ,source))
-     (if (eq? source old-variable) (spill-read sexpr) sexpr)]
+     (if (eq? source old-variable) (spill-read sexpr) (list sexpr))]
     
     ; (eax <- (allocate t t))
     ; (eax <- (array-error t t))
-    [(or `(eax <- allocate ,v1 ,v2)
-         `(eax <- array-error ,v1 ,v2))
+    [(or `(eax <- (allocate ,v1 ,v2))
+         `(eax <- (array-error ,v1 ,v2)))
      (if (or (eq? v1 old-variable) (eq? v2 old-variable))
          (spill-read sexpr) (list sexpr))]
     
@@ -98,7 +98,7 @@
     ; (x <- s) ;; assign to a register
     [`(,dest <- ,source)
      (cond
-       [(and (eq? source old-variable) (eq? dest old-variable)) (void)]
+       [(and (eq? source old-variable) (eq? dest old-variable)) (list)]
        [(eq? source old-variable) (write-to-x dest)]
        [(eq? dest old-variable) (read-from-s source)]
        [else (list sexpr)])]
