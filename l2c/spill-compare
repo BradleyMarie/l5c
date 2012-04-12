@@ -2,37 +2,35 @@
 
 # Play nice with spaces in filenames
 SAVEIFS=$IFS
-IFS=$(echo -en "\n\b")
+IFS=$(echo "\n\b")
 
-getScriptPath() {
-	echo ${0%/*}/
-}
-
-testDirPath=$(getScriptPath)../spill-test
-
-for spillPath in $( find $testDirPath -name '*L2f' )
+for spillPath in $( find "../spill-test" -name '*L2f' )
 do
 
 # Remove file extension
+echo $spillPath
 testName=$(echo "$spillPath" | sed 's,.*/\([^/]*\)\..*,\1,g')
-outFile="$testDirPath/$testName"
+echo $testName
+outFile="../spill-test/$testName"
 
 # Spill
+
 ./spill "$spillPath" > "$outFile.txt"
 
 # Compare
-if diff -wB "$outFile.txt" "$outFile.sres" > /dev/null
+cat "$outFile.sres" | tr '\n' ' ' > "$outFile.nice"       
+if diff -wB --strip-trailing-cr "$outFile.txt" "$outFile.nice" > /dev/null
 then
   : # files are the same
   printf "\n%20s: SUCCESS\n" $testName
 else
   : # files are different
   printf "\n%20s: FAILED\n" $testName
-  diff -wBy -W 70 --suppress-common-lines "$outFile.txt" "$outFile.sres"
+  diff -wBy -W 90 --strip-trailing-cr --suppress-common-lines "$outFile.txt" "$outFile.nice"
 fi
 
 # Cleanup
-rm "$outFile.txt"
+rm "$outFile.txt" "$outFile.nice"
 
 done
 
