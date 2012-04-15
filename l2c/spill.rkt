@@ -70,68 +70,66 @@
 
 (define (spill-instruction sexpr)
   (match sexpr
+    ; Reads once
     ; (eax <- (print t))
-    [`(eax <- (print ,source))
-     (if (eq? source old-variable) (spill-read sexpr) (list sexpr))]
-    
-    ; (eax <- (allocate t t))
-    ; (eax <- (array-error t t))
-    [(or `(eax <- (allocate ,v1 ,v2))
-         `(eax <- (array-error ,v1 ,v2)))
-     (if (or (eq? v1 old-variable) (eq? v2 old-variable))
-         (spill-read sexpr) (list sexpr))]
-    
-    ; (x <- (mem x n4)) ; read from memory @ x+n4
-    [`(,dest <- (mem ,source-base ,source-offset))
-     (cond
-       [(and (eq? dest old-variable) (eq? source-base old-variable))
-        (spill-read-write sexpr)]
-       [(eq? dest old-variable) (spill-write sexpr)]
-       [(eq? source-base old-variable) (spill-read sexpr)]
-       [else (list sexpr)])]
-    
-    ; ((mem x n4) <- s) ;; update memory @ x+n4
-    [`((mem ,dest-base ,dest-offset) <- ,source)
-     (if (or (eq? dest-base old-variable) (eq? source old-variable))
-         (spill-read sexpr) (list sexpr))]
-    
-    ; (x <- s) ;; assign to a register
-    [`(,dest <- ,source)
-     (cond
-       [(and (eq? source old-variable) (eq? dest old-variable)) (list)]
-       [(eq? source old-variable) (write-to-x dest)]
-       [(eq? dest old-variable) (read-from-s source)]
-       [else (list sexpr)])]
-    
-    ; (x aop= t) ;; update x with an arith op and t.
-    ; (x sop= sx) ;; update x with a shifting op and sx.
-    [`(,lhs ,(? op? op) ,rhs)
-     (cond
-       [(eq? lhs old-variable) (spill-read-write sexpr)]
-       [(eq? rhs old-variable) (spill-read sexpr)]
-       [else (list sexpr)])]
-    
     ; (goto label) ;; unconditional jump
     ; (call u) ;; call a function
     ; (tail-call u) ;; tail call a function
-    [(or `(goto ,label) `(call ,label) `(tail-call ,label))
-     (if (eq? label old-variable) (spill-read sexpr) (list sexpr))]
+    [(or `(eax <- (print ,read))
+         `(goto ,read)
+         `(call ,read)
+         `(tail-call ,read))
+     (if (eq? read old-variable) (spill-read sexpr) (list sexpr))]
     
+    ; Reads twice
+    ; (eax <- (allocate t t))
+    ; (eax <- (array-error t t))
+    ; ((mem x n4) <- s) ;; update memory @ x+n4
+    ; (cjump t cmp t label label) ;; conditional jump
+    [(or `(eax <- (allocate ,read1 ,read2))
+         `(eax <- (array-error ,read1 ,read2))
+         `((mem ,read1 ,(? number?)) <- ,read2)
+         `(cjump ,read1 ,(? cmp?) ,read2 ,(? symbol?) ,(? symbol?)))
+     (if (or (eq? read1 old-variable) (eq? read2 old-variable))
+         (spill-read sexpr) (list sexpr))]
+    
+    ; Reads twice, writes once
     ; (cx <- t cmp t) ;; save result of a comparison;
-    [`(,dest <- ,lhs ,(? cmp? cmp) ,rhs)
+    [`(,write <- ,read1 ,(? cmp?) ,read2)
      (cond
-       [(and (eq? dest old-variable) (or (eq? lhs old-variable) (eq? rhs old-variable)))
+       [(and (eq? write old-variable) (or (eq? read1 old-variable) (eq? read2 old-variable)))
         (spill-read-write sexpr)]
-       [(or (eq? lhs old-variable) (eq? rhs old-variable))
+       [(or (eq? read1 old-variable) (eq? read2 old-variable))
         (spill-read sexpr)]
-       [(eq? dest old-variable)
+       [(eq? write old-variable)
         (spill-write sexpr)]
        [else (list sexpr)])]
     
-    ; (cjump t cmp t label label) ;; conditional jump
-    [`(cjump ,lhs ,(? cmp? cmp) ,rhs ,true-label ,false-label)
-     (if (or (eq? lhs old-variable) (eq? rhs old-variable))
-         (spill-read sexpr) (list sexpr))]
+    ; One destructive read, one regular read, writes once
+    ; (x aop= t) ;; update x with an arith op and t.
+    ; (x sop= sx) ;; update x with a shifting op and sx.
+    [`(,readwrite ,(? op?) ,read)
+     (cond
+       [(eq? readwrite old-variable) (spill-read-write sexpr)]
+       [(eq? read old-variable) (spill-read sexpr)]
+       [else (list sexpr)])]
+    
+    ; Read once, write once
+    ; (x <- (mem x n4)) ; read from memory @ x+n4
+    [`(,write <- (mem ,read ,(? number?)))
+     (cond
+       [(and (eq? write old-variable) (eq? read old-variable)) (spill-read-write sexpr)]
+       [(eq? write old-variable) (spill-write sexpr)]
+       [(eq? read old-variable) (spill-read sexpr)]
+       [else (list sexpr)])]
+    
+    ; (x <- s) ;; assign to a register
+    [`(,write <- ,read)
+     (cond
+       [(and (eq? read old-variable) (eq? write old-variable)) (list)]
+       [(eq? read old-variable) (write-to-x write)]
+       [(eq? write old-variable) (read-from-s read)]
+       [else (list sexpr)])]
     
     [_ (list sexpr)]))
 
