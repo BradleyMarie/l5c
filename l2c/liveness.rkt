@@ -28,11 +28,11 @@
 (define (num? expr)
   (number? expr))
 
-(define (liveable? expr)
+(define (genable? expr)
   (and (not (num? expr)) (not (label? expr))))
 
-(define (liveness-set . elements)
-  (list->set (filter liveable? elements)))
+(define (gens-set . elements)
+  (list->set (filter genable? elements)))
 
 (define caller-save
   (set 'ecx 'edx 'eax 'ebx))
@@ -54,11 +54,11 @@
     ; Special cases
     ; (call u) ;; call a function
     [`(call ,read)
-     (cons (set-union (liveness-set read) args) (set-union caller-save result))]
+     (cons (set-union (gens-set read) args) (set-union caller-save result))]
     
     ; (tail-call u) ;; tail call a function
     [`(tail-call ,read)
-     (cons (set-union (liveness-set read) args callee-save) (set))]
+     (cons (set-union (gens-set read) args callee-save) (set))]
 
     ; (return)
     [`(return)
@@ -69,7 +69,7 @@
     ; (goto label) ;; unconditional jump
     [(or `(eax <- (print ,read))
          `(goto ,read))
-     (cons (liveness-set read) (set))]
+     (cons (gens-set read) (set))]
     
     ; Reads twice
     ; (eax <- (allocate t t))
@@ -80,24 +80,24 @@
          `(eax <- (array-error ,read1 ,read2))
          `((mem ,read1 ,(? number?)) <- ,read2)
          `(cjump ,read1 ,(? cmp?) ,read2 ,(? symbol?) ,(? symbol?)))
-     (cons (liveness-set read1 read2) (set))]
+     (cons (gens-set read1 read2) (set))]
     
     ; Reads twice, writes once
     ; (cx <- t cmp t) ;; save result of a comparison;
     [`(,write <- ,read1 ,(? cmp?) ,read2)
-     (cons (liveness-set read1 read2) (set write))]
+     (cons (gens-set read1 read2) (set write))]
     
     ; One destructive read, one regular read, writes once
     ; (x aop= t) ;; update x with an arith op and t.
     ; (x sop= sx) ;; update x with a shifting op and sx.
     [`(,readwrite ,(? op?) ,read)
-     (cons (liveness-set readwrite read) (set readwrite))]
+     (cons (gens-set readwrite read) (set readwrite))]
     
     ; Read once, write once
     ; (x <- (mem x n4)) ; read from memory @ x+n4
     [(or `(,write <- (mem ,read ,(? number?)))
          `(,write <- ,read))
-     (cons (liveness-set read) (set write))]
+     (cons (gens-set read) (set write))]
     
     [_ (cons (set) (set))]))
 
