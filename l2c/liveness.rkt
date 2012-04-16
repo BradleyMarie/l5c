@@ -59,7 +59,7 @@
     ; (tail-call u) ;; tail call a function
     [`(tail-call ,read)
      (cons (set-union (gens-set read) args callee-save) (set))]
-
+    
     ; (return)
     [`(return)
      (cons (set-union result callee-save) (set))]
@@ -105,24 +105,28 @@
   (map gen-kill-instruction sexpr))
 
 ;;
-;; In/Out
+;; In generation code
 ;;
 
 (define (in-instruction gen-kill-pair out-instruction)
   (set-union (car gen-kill-pair) (set-subtract out-instruction (cdr gen-kill-pair))))
-
-(define (out-instruction in-instruction-list) 
-  (if (empty? in-instruction-list) (set) (first in-instruction-list)))
 
 (define (in-function-rec gen-kill-pair-list out-instruction-list output-in-function-list)
   (if (empty? gen-kill-pair-list)
       output-in-function-list
       (in-function-rec (rest gen-kill-pair-list) (rest out-instruction-list) 
                        (append output-in-function-list (list (in-instruction (first gen-kill-pair-list) 
-                                                                        (first out-instruction-list)))))))
+                                                                             (first out-instruction-list)))))))
 
 (define (in-function gen-kill-pair-list out-instruction-list)
   (in-function-rec gen-kill-pair-list out-instruction-list (list)))
+
+;;
+;; Out generation code
+;;
+
+(define (out-instruction in-instruction-list) 
+  (if (empty? in-instruction-list) (set) (first in-instruction-list)))
 
 (define (out-function-rec in-instruction-list output-out-instruction-list)
   (if (empty? in-instruction-list)
@@ -130,13 +134,17 @@
       (out-function-rec (rest in-instruction-list)
                         (append output-out-instruction-list (list (out-instruction (rest in-instruction-list)))))))
 
-; Returns in/out list
 (define (out-function in-instruction-list)
-  (list in-instruction-list
-   (out-function-rec in-instruction-list (list))))
+  (out-function-rec in-instruction-list (list)))
+
+;;
+;; Perform liveness analysis
+;;
 
 (define (liveness-function-rec gen-kill-pair-list old-in-out-list)
-  (let ([new-in-out-list (out-function (in-function gen-kill-pair-list (second old-in-out-list)))])
+  (let* ([new-in-list (in-function gen-kill-pair-list (second old-in-out-list))]
+         [new-out-list (out-function new-in-list)]
+         [new-in-out-list (list new-in-list new-out-list)])
     (if (equal? old-in-out-list new-in-out-list)
         old-in-out-list
         (liveness-function-rec gen-kill-pair-list new-in-out-list))))
@@ -149,7 +157,7 @@
     (build-list (length gen-kill-pair-list) (lambda (x) (set))))))
 
 ;;
-;; Perform liveness analysis on the file specified on the command line
+;; Output formatting Code
 ;;
 
 (define (symbol<? s1 s2)
@@ -162,7 +170,11 @@
   (list (append (list 'in) (map set->sortedlist (first liveness-results)))
         (append (list 'out) (map set->sortedlist (second liveness-results)))))
 
-(define (perform-liveness-analysis sexpr)
+;;
+;; Kick off the liveness analysis
+;;
+
+(define (start-liveness-analysis sexpr)
   (display (format-liveness-results (liveness-function (gen-kill-function sexpr)))))
 
 (require racket/cmdline)
@@ -170,4 +182,4 @@
   (command-line
    #:args (filename) filename))
 
-(perform-liveness-analysis (call-with-input-file filename read))
+(start-liveness-analysis (call-with-input-file filename read))
