@@ -1,21 +1,21 @@
 ;; Northwestern University
 ;; EECS 322
-;; L1 Compiler
+;; Spill
 ;;
 ;; By Brad Weinberger & Ethan Romba
-;; April 7, 2012
+;; April 15, 2012
 
 #lang plai
+
+;;
+;; Helper Functions
+;;
 
 (define (op? expr)
   (member expr (list '+= '-= '*= '&= '<<= '>>=)))
 
 (define (cmp? expr)
   (member expr (list '< '<= '= )))
-
-;;
-;; Helper Functions
-;;
 
 (define (replace-list-elements list-of-symbols find-value replace-value)
   (cond
