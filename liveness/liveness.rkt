@@ -105,56 +105,99 @@
   (map gen-kill-instruction sexpr))
 
 ;;
+;; Successor 
+;;
+
+(define (make-label-hash-map list-of-instructions list-of-instruction-indices)
+  (make-hash (filter (lambda (numbered-instruction)
+                       (label? (car numbered-instruction)))
+                     (map (lambda (instruction index) (cons instruction index))
+                          list-of-instructions list-of-instruction-indices))))
+
+(define (successor-instruction sexpr index label-index-map)
+  (match sexpr
+    ; No Successors
+    ; (return)
+    [`(return)
+     (set)]
+    
+    ; One Successor
+    ; (goto label)
+    [`(goto ,label)
+     (set (hash-ref label-index-map label))]
+    
+    ; Two Successors
+    ; (cjump t cmp t label label)
+    [`(cjump ,lhs ,(? cmp?) ,rhs ,true-label ,false-label)
+     (set (hash-ref label-index-map true-label) (hash-ref label-index-map false-label))]
+    
+    [_ (set (+ 1 index))]))
+
+(define (successors-function list-of-instructions)
+  (let* ([list-of-instruction-indices (build-list (length list-of-instructions) (lambda (x) x))]
+         [label-index-map (make-label-hash-map list-of-instructions list-of-instruction-indices)])
+    (map (lambda (instruction index) (successor-instruction instruction index label-index-map))
+         list-of-instructions list-of-instruction-indices)))
+
+;;
 ;; In generation code
 ;;
 
 (define (in-instruction gen-kill-pair out-instruction)
   (set-union (car gen-kill-pair) (set-subtract out-instruction (cdr gen-kill-pair))))
 
-(define (in-function-rec gen-kill-pair-list out-instruction-list output-in-function-list)
+(define (in-function-rec gen-kill-pair-list out-instruction-list output-in-function-vector)
   (if (empty? gen-kill-pair-list)
-      output-in-function-list
+      output-in-function-vector
       (in-function-rec (rest gen-kill-pair-list) (rest out-instruction-list) 
-                       (append output-in-function-list (list (in-instruction (first gen-kill-pair-list) 
-                                                                             (first out-instruction-list)))))))
+                       (vector-append output-in-function-vector (vector (in-instruction (first gen-kill-pair-list) 
+                                                                                      (first out-instruction-list)))))))
 
 (define (in-function gen-kill-pair-list out-instruction-list)
-  (in-function-rec gen-kill-pair-list out-instruction-list (list)))
+  (in-function-rec gen-kill-pair-list out-instruction-list (vector)))
 
 ;;
 ;; Out generation code
 ;;
 
-(define (out-instruction in-instruction-list) 
-  (if (empty? in-instruction-list) (set) (first in-instruction-list)))
+(define (out-instruction in-instruction-vector successor-instruction-set)
+  (if (or (set-empty? successor-instruction-set)
+          (equal? (set (vector-length in-instruction-vector)) successor-instruction-set))
+      (set)
+      (foldl (lambda (successor result) 
+               (set-union result (vector-ref in-instruction-vector successor)))
+             (set)
+             (set->list successor-instruction-set))))
 
-(define (out-function-rec in-instruction-list output-out-instruction-list)
-  (if (empty? in-instruction-list)
+(define (out-function-rec in-instruction-vector list-of-successors output-out-instruction-list)
+  (if (empty? list-of-successors)
       output-out-instruction-list
-      (out-function-rec (rest in-instruction-list)
-                        (append output-out-instruction-list (list (out-instruction (rest in-instruction-list)))))))
+      (out-function-rec in-instruction-vector (rest list-of-successors)
+                        (append output-out-instruction-list 
+                                (list (out-instruction in-instruction-vector (first list-of-successors)))))))
 
-(define (out-function in-instruction-list)
-  (out-function-rec in-instruction-list (list)))
+(define (out-function in-instruction-vector list-of-successors)
+  (out-function-rec in-instruction-vector list-of-successors (list)))
 
 ;;
 ;; Perform liveness analysis
 ;;
 
-(define (liveness-function-rec gen-kill-pair-list old-in-out-list)
+(define (liveness-function-rec gen-kill-pair-list successor-list old-in-out-list)
   (let* ([new-in-list (in-function gen-kill-pair-list (second old-in-out-list))]
-         [new-out-list (out-function new-in-list)]
+         [new-out-list (out-function new-in-list successor-list)]
          [new-in-out-list (list new-in-list new-out-list)])
     (if (equal? old-in-out-list new-in-out-list)
         old-in-out-list
-        (liveness-function-rec gen-kill-pair-list new-in-out-list))))
+        (liveness-function-rec gen-kill-pair-list successor-list new-in-out-list))))
 
-(define (liveness-function gen-kill-pair-list)
+(define (liveness-function sexpr)
   (liveness-function-rec
-   gen-kill-pair-list
+   (gen-kill-function sexpr)
+   (successors-function sexpr)
    (list
-    (build-list (length gen-kill-pair-list) (lambda (x) (set)))
-    (build-list (length gen-kill-pair-list) (lambda (x) (set))))))
+    (build-list (length sexpr) (lambda (x) (set)))
+    (build-list (length sexpr) (lambda (x) (set))))))
 
 ;;
 ;; Output formatting Code
@@ -167,7 +210,7 @@
   (sort (set->list set-of-symbols) symbol<?))
 
 (define (format-liveness-results liveness-results)
-  (list (append (list 'in) (map set->sortedlist (first liveness-results)))
+  (list (append (list 'in) (vector->list (vector-map set->sortedlist (first liveness-results))))
         (append (list 'out) (map set->sortedlist (second liveness-results)))))
 
 ;;
@@ -175,7 +218,7 @@
 ;;
 
 (define (start-liveness-analysis sexpr)
-  (display (format-liveness-results (liveness-function (gen-kill-function sexpr)))))
+  (display (format-liveness-results (liveness-function sexpr))))
 
 (require racket/cmdline)
 (define filename
