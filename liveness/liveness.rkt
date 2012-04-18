@@ -37,6 +37,9 @@
 (define caller-save
   (set 'ecx 'edx 'eax 'ebx))
 
+(define x86-caller-save
+  (set 'ecx 'edx 'eax))
+
 (define args
   (set 'eax 'edx 'ecx))
 
@@ -64,21 +67,25 @@
     [`(return)
      (cons (set-union result callee-save) (set))]
     
-    ; Reads once
+    ; (eax <- (allocate t t))
+    ; (eax <- (array-error t t))
+    [(or `(,write <- (allocate ,read1 ,read2))
+         `(,write <- (array-error ,read1 ,read2)))
+     (cons (gens-set read1 read2) (set-union (set write) x86-caller-save))]
+    
     ; (eax <- (print t))
+    [`(,write <- (print ,read))
+     (cons (gens-set read) (set-union (set write) x86-caller-save))]
+    
+    ; Reads once
     ; (goto label) ;; unconditional jump
-    [(or `(eax <- (print ,read))
-         `(goto ,read))
+    [`(goto ,read)
      (cons (gens-set read) (set))]
     
     ; Reads twice
-    ; (eax <- (allocate t t))
-    ; (eax <- (array-error t t))
     ; ((mem x n4) <- s) ;; update memory @ x+n4
     ; (cjump t cmp t label label) ;; conditional jump
-    [(or `(eax <- (allocate ,read1 ,read2))
-         `(eax <- (array-error ,read1 ,read2))
-         `((mem ,read1 ,(? number?)) <- ,read2)
+    [(or `((mem ,read1 ,(? number?)) <- ,read2)
          `(cjump ,read1 ,(? cmp?) ,read2 ,(? symbol?) ,(? symbol?)))
      (cons (gens-set read1 read2) (set))]
     
@@ -95,9 +102,11 @@
     
     ; Read once, write once
     ; (x <- (mem x n4)) ; read from memory @ x+n4
+    ; (x <- x) ; simple assignment
     [(or `(,write <- (mem ,read ,(? number?)))
          `(,write <- ,read))
      (cons (gens-set read) (set write))]
+    
     
     [_ (cons (set) (set))]))
 
@@ -118,7 +127,13 @@
   (match sexpr
     ; No Successors
     ; (return)
-    [`(return)
+    ; (tail-call s)
+    [(or `(return)
+         `(tail-call ,(? symbol?)))
+     (set)]
+    
+    ; (eax <- (array-error t t))
+    [`(eax <- (array-error ,t1 ,t2))
      (set)]
     
     ; One Successor
