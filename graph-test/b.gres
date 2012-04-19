@@ -8,5 +8,5 @@
  (x3 eax edi esi x4)
  (x4 eax edi esi x3))
 ((x2 ebx)
- (x3 eax)
- (x4 ecx))
+ (x3 ecx)
+ (x4 edx))
