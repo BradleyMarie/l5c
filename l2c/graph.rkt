@@ -24,6 +24,9 @@
 (define (list-by-first<? l1 l2)
   (string<? (symbol->string (first l1)) (symbol->string (first l2))))
 
+(define (sop? expr)
+  (set-member? (set '<<= '>>=) expr))
+
 ;;
 ;; Graph Generation
 ;;
@@ -62,12 +65,22 @@
            graph
            (list->list-of-pairs symbols)))
 
-(define (function-graph first-instruction-ins outs)
+(define (function-graph first-instruction-ins outs graph)
   (foldl (lambda (instruction-outs modified-graph)
            (add-symbols-to-graph instruction-outs modified-graph))
-         (add-symbols-to-graph first-instruction-ins base-graph)
+         (add-symbols-to-graph first-instruction-ins graph)
          outs))
 
+(define (instruction-graph list-of-instructions)
+  (foldl (lambda (instruction modified-graph)
+           (match instruction
+             ; (x sop= sx) ;; update x with a shifting op and sx.
+             [`(,ignore ,(? sop?) ,read)
+              (add-symbols-to-graph (list* read (set->list (set-subtract registers (set 'ecx)))) modified-graph)]
+             
+             [_ modified-graph]))
+         base-graph
+         list-of-instructions))
 ;;
 ;; Graph to Register Assignments
 ;;
