@@ -107,7 +107,7 @@
 ;;
 
 (define (start-graph-coloring sexpr)
-  (display (format-graph (function-graph (second (first sexpr)) (second sexpr)))))
+  (display (format-graph (function-graph (second (first sexpr)) (rest (second sexpr))))))
 
 (require racket/cmdline)
 (define filename
