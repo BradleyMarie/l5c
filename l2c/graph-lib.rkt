@@ -17,7 +17,12 @@
 
 (define (register? sym) (set-member? registers sym))
 
-(define (variable? sym) (not (register? sym)))
+(define (variable? sym) 
+  (if (and (not (register? sym)) (symbol? sym))
+      (match (symbol->string sym)
+        [(regexp #rx"^[a-zA-Z_-][a-zA-Z_0-9-]*$") #t]
+        [_ #f])
+      #f))
 
 (define (symbol-by-name<? s1 s2)
   (string<? (symbol->string s1) (symbol->string s2)))
@@ -79,7 +84,7 @@
   (foldl (lambda (instruction modified-graph)
            (match instruction
              ; (x sop= sx) ;; update x with a shifting op and sx.
-             [`(,ignore ,(? sop?) ,read)
+             [`(,ignore ,(? sop?) ,(? variable? read))
               (add-symbols-to-interference-graph (list* read (set->list (set-subtract registers (set 'ecx)))) modified-graph)]
              
              [_ modified-graph]))
