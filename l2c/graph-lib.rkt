@@ -69,10 +69,12 @@
      (set-add car-value (cdr pair-of-symbols)))))
   
 (define (add-symbols-to-interference-graph symbols graph)
-  (foldl (lambda (pair modified-graph) 
-           (add-pair-to-interference-graph pair modified-graph))
-           graph
-           (list->list-of-pairs symbols)))
+  (if (and (= 1 (length symbols)) (not (hash-has-key? graph (first symbols))))
+      (hash-set graph (first symbols) (set))
+      (foldl (lambda (pair modified-graph) 
+               (add-pair-to-interference-graph pair modified-graph))
+             graph
+             (list->list-of-pairs symbols))))
 
 (define (function-interference-graph first-instruction-ins outs graph)
   (foldl (lambda (instruction-outs modified-graph)
@@ -126,7 +128,7 @@
 
 (define (add-colored-vertex-to-graph variable adjacency-set old-coloring-graph)
   (let ([vertex-color (find-vertex-color adjacency-set old-coloring-graph)])
-    (if (eq? vertex-color (void))
+    (if (equal? vertex-color (void))
         #f
         (foldl (lambda (element modified-coloring-graph)
                  (hash-update modified-coloring-graph element
@@ -184,7 +186,7 @@
       (let ([modified-graph (add-colored-vertex-to-graph (car (first sorted-vertex-list))
                                                          (cdr (first sorted-vertex-list))
                                                          colored-graph)])
-        (if (eq? modified-graph #f)
+        (if (equal? modified-graph #f)
                  #f
                  (color-interference-graph-rec (remove-vertex-from-interference-graph (car (first sorted-vertex-list)) interference-graph)
                                                (rest sorted-vertex-list)
@@ -208,7 +210,7 @@
    list-by-first<?))
 
 (define (format-colored-graph graph)
-  (if (eq? #f graph)
+  (if (equal? #f graph)
       #f
       (sort 
        (filter
