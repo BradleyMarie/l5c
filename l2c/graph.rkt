@@ -13,4 +13,7 @@
   (command-line
    #:args (filename) filename))
 
-(generate-graph (call-with-input-file filename read))
+(define interference-graph (generate-interference-graph (call-with-input-file filename read)))
+
+(display interference-graph)
+(display (generate-colored-graph interference-graph))
