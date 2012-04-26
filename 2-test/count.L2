@@ -7,7 +7,7 @@
   (cjump var3 <= var1 :print :done)
   
   :print
-  (var2 <- (print var3)) ;; print var3
+  (eax <- (print var3)) ;; print var3
   (var3 += 2) ;; increment var3 by 1
   (goto :loop)
 

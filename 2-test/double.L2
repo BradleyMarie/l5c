@@ -19,4 +19,4 @@
   ; encode
   (var1 <<= 1)
   (var1 += 1)
-  (var1 <- (print var1))))
+  (eax <- (print var1))))
