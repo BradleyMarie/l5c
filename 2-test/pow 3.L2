@@ -1,31 +1,31 @@
-(((edi <- 0)
+(((var1 <- 0)
 
   :compare
-  (cjump edi < 5 :funcCall :exit)
+  (cjump var1 < 5 :funcCall :exit)
 
   :funcCall
-  (eax <- edi)
+  (eax <- var1)
   (call :pow3)
   (eax <<= 1)
   (eax += 1)
   (eax <- (print eax))
-  (edi += 1)
+  (var1 += 1)
   (goto :compare)
 
   :exit)
 
  (:pow3
-  (ebx <- 1)
+  (var2 <- 1)
   (ecx <- eax)
 
   :comp
   (cjump 0 < eax :do :done)
 
   :do
-  (ebx *= 3)
+  (var2 *= 3)
   (eax -= 1)
   (goto :comp)
 
   :done
-  (eax <- ebx)
+  (eax <- var2)
   (return)))

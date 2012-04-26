@@ -4,7 +4,7 @@
   
   (:factorial
    
-   (ebx <- 1) ;; initialize product to 1 
+   (var1 <- 1) ;; initialize product to 1 
    
    ;decode eax
    (eax -= 1)
@@ -14,15 +14,15 @@
    (cjump 0 < eax :do_work :done)
    
    :do_work
-   (ebx *= eax) ;; do multiplication
+   (var1 *= eax) ;; do multiplication
    (eax -= 1) ;; decrement counter
    (goto :loop)   
 
    :done
    ;; reeencode output
-   (ebx <<= 1)
-   (ebx += 1)
+   (var1 <<= 1)
+   (var1 += 1)
 
    ;; save output to eax
-   (eax <- ebx)
+   (eax <- var1)
    (return)))

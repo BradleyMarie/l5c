@@ -1,12 +1,12 @@
-(((edi <- 0)
+(((var1 <- 0)
 
   :compare
-  (cjump edi < 5 :funcCall :done)
+  (cjump var1 < 5 :funcCall :done)
 
   :funcCall
 
   ;;generate args and run function
-  (eax <- edi)
+  (eax <- var1)
   (ebx <- eax)
   (ebx *= 2)
   (call :area)
@@ -18,7 +18,7 @@
   ;; print
   (eax <- (print eax))
   
-  (edi += 1)
+  (var1 += 1)
   (goto :compare)
 
   :done)

@@ -1,14 +1,14 @@
-(((esi <- 21) ;; loop termination variable = 10
-  (ebx <- 3) ;; start counting at 1
+(((var1 <- 21) ;; loop termination variable = 10
+  (var3 <- 3) ;; start counting at 1
   
-  (ecx <- :loop) ;;useless 
+  (var4 <- :loop) ;;useless 
 
   :loop
-  (cjump ebx <= esi :print :done)
+  (cjump var3 <= var1 :print :done)
   
   :print
-  (eax <- (print ebx)) ;; print ebx
-  (ebx += 2) ;; increment ebx by 1
+  (var2 <- (print var3)) ;; print var3
+  (var3 += 2) ;; increment var3 by 1
   (goto :loop)
 
   :done

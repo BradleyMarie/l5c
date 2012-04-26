@@ -1,15 +1,15 @@
-(((edi <- 0)
+(((var1 <- 0)
 
   :compare
-  (cjump edi <= 8 :funcCall :done)
+  (cjump var1 <= 8 :funcCall :done)
 
   :funcCall
-  (eax <- edi)
+  (eax <- var1)
   (call :isdivbytwo)
   (eax <<= 1)
   (eax += 1)
   (eax <- (print eax))
-  (edi += 1)
+  (var1 += 1)
   (goto :compare)
 
   :done)

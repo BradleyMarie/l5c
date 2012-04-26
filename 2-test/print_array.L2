@@ -1,26 +1,26 @@
 ((;; allocate and print an array of size 5
   (eax <- (allocate 11 3))
 
-  (ebx <- eax)
+  (var2 <- eax)
 
-  (ecx <- 0) ;; index into the array
+  (var3 <- 0) ;; index into the array
 
   :compare
-  (cjump ecx < 5 :fillArray :done)
+  (cjump var3 < 5 :fillArray :done)
    
   :fillArray
-  (eax <- ecx)
-  (eax <<= 1)
-  (eax += 1)
+  (var1 <- var3)
+  (var1 <<= 1)
+  (var1 += 1)
 
-  (edi <- ecx)
-  (edi <<= 2) ;; multiply by 4
-  (edi += 4)
-  (edi += ebx)
+  (var6 <- var3)
+  (var6 <<= 2) ;; multiply by 4
+  (var6 += 4)
+  (var6 += var2)
 
-  ((mem edi 0) <- eax)
-  (ecx += 1)
+  ((mem var6 0) <- var1)
+  (var3 += 1)
   (goto :compare)
 
   :done
-  (eax <- (print ebx))))
+  (eax <- (print var2))))
