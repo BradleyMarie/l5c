@@ -1,15 +1,15 @@
-(((edi <- 0)
+(((i <- 0)
 
   :compare
-  (cjump edi < 5 :funcCall :done)
+  (cjump i < 5 :funcCall :done)
 
   :funcCall
 
   ;;generate args and run function
-  (eax <- edi)
-  (ebx <- edi)
-  (ecx <- edi)
-  (edx <- edi)
+  (eax <- i)
+  (ebx <- i)
+  (ecx <- i)
+  (edx <- i)
   (ebx *= 2)
   (ecx *= 3)
   (edx *= 4)
@@ -23,7 +23,7 @@
   ;; print
   (eax <- (print eax))
   
-  (edi += 1)
+  (i += 1)
   (goto :compare)
 
   :done)

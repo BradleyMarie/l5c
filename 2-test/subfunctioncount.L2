@@ -1,13 +1,13 @@
-(((esi <- 21) ;; loop termination variable = 10
-  (ebx <- 3) ;; start counting at 1
+(((i <- 21) ;; loop termination variable = 10
+  (b <- 3) ;; start counting at 1
   
   :loop
-  (cjump ebx <= esi :body :done)
+  (cjump b <= i :body :done)
   
   :body
-  (eax <- ebx) ;; push function argument
+  (eax <- b) ;; push function argument
   (call :print) ;; print
-  (ebx += 2) ;; increment ebx by 1
+  (b += 2) ;; increment b by 1
   (goto :loop)
 
   :done)

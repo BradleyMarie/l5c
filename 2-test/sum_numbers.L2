@@ -1,22 +1,22 @@
-(((edi <- 90)
+(((i <- 90)
 
   :compare
-  (cjump edi <= 100 :funcCall :done)
+  (cjump i <= 100 :funcCall :done)
 
   :funcCall
-  (eax <- edi)
+  (eax <- i)
   (call :sum_num)
   (eax <<= 1)
   (eax += 1)
   (eax <- (print eax))
-  (edi += 1)
+  (i += 1)
   (goto :compare)
 
   :done)
 
  (:sum_num
-  (ebx <- eax)
+  (b <- eax)
   (eax += 1)
-  (eax *= ebx)
+  (eax *= b)
   (eax >>= 1)
   (return)))
