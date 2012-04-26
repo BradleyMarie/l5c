@@ -1,0 +1,14 @@
+((;; allocate and print an array of size 5
+  (eax <- (allocate 19 3))
+
+  ((mem eax 4) <- 3)
+  ((mem eax 8) <- 5)
+  ((mem eax 12) <- 7)
+  ((mem eax 16) <- 9)
+  ((mem eax 20) <- 11)
+  ((mem eax 24) <- 9)
+  ((mem eax 28) <- 7)
+  ((mem eax 32) <- 5)
+  ((mem eax 36) <- 3)
+
+  (eax <- (print eax))))

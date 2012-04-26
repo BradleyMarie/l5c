@@ -1,0 +1,19 @@
+(((eax <- 43) ;; Compare 10101 ...
+  (ebx <- 11) ;; to 00101
+
+  ; decode
+  (eax -= 1)
+  (eax >>= 1)
+  
+  (ebx -= 1)
+  (ebx >>= 1)
+
+  ; comparison
+  (eax &= ebx)
+
+  ; encode
+  (eax <<= 1)
+  (eax += 1)
+
+  ; print
+  (eax <- (print eax))))

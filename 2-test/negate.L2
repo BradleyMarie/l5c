@@ -1,0 +1,19 @@
+(((edi <- -2)
+
+  :compare
+  (cjump edi <= 2 :funcCall :done)
+
+  :funcCall
+  (eax <- edi)
+  (call :negate)
+  (eax <<= 1)
+  (eax += 1)
+  (eax <- (print eax))
+  (edi += 1)
+  (goto :compare)
+
+  :done)
+
+ (:negate
+  (eax *= -1)
+  (return)))

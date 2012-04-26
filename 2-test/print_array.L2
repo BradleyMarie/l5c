@@ -1,0 +1,26 @@
+((;; allocate and print an array of size 5
+  (eax <- (allocate 11 3))
+
+  (ebx <- eax)
+
+  (ecx <- 0) ;; index into the array
+
+  :compare
+  (cjump ecx < 5 :fillArray :done)
+   
+  :fillArray
+  (eax <- ecx)
+  (eax <<= 1)
+  (eax += 1)
+
+  (edi <- ecx)
+  (edi <<= 2) ;; multiply by 4
+  (edi += 4)
+  (edi += ebx)
+
+  ((mem edi 0) <- eax)
+  (ecx += 1)
+  (goto :compare)
+
+  :done
+  (eax <- (print ebx))))

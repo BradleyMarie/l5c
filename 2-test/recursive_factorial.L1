@@ -1,0 +1,30 @@
+(((eax <- 11) ;; compute factorial of 1
+  (call :factorial)
+  (eax <- (print eax)))
+  
+  (:factorial_recursive
+
+   (cjump 0 < ebx :recurse :done)
+   
+   :done 
+   (return)
+
+   :recurse
+   (eax *= ebx)
+   (ebx -= 1)
+   (tail-call :factorial_recursive))
+ 
+  (:factorial 
+   ;decode 
+   (eax -= 1)
+   (eax >>= 1)
+
+   ;function
+   (ebx <- eax)
+   (eax <- 1)
+   (call :factorial_recursive)
+ 
+   ;encode
+   (eax <<= 1)
+   (eax += 1)
+   (return)))
