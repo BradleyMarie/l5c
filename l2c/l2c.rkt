@@ -49,8 +49,12 @@
                  '((ebx <- 1) (eax += ebx) (return)))
 
 (define (insert-esp-adjustment function num-spills)
-  (list* (list 'esp '-= (* -4 num-spills)) function))
+  (if (zero? num-spills)
+      function
+      (list* (list 'esp '-= (* -4 num-spills)) function)))
 
+(check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 0)
+                 '((ebx <- 1) (eax += ebx) (return)))
 (check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 2)
                  '((esp -= -8) (ebx <- 1) (eax += ebx) (return)))
 
