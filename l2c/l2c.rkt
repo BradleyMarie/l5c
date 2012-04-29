@@ -6,6 +6,9 @@
 ;; April 30, 2012
 
 #lang racket
+
+(define DEVELOPMENT #f)
+
 (require "spill-lib.rkt")
 (require "liveness-lib.rkt")
 (require "graph-lib.rkt")
@@ -79,10 +82,9 @@
 (define (compile-program program)
   (map compile-function program))
 
-(test)
-
-(define filename
-  (command-line
-   #:args (filename) filename))
-
-(display (compile-program (call-with-input-file filename read)))
+(if DEVELOPMENT
+    (test)
+    (let ([filename
+        (command-line
+         #:args (filename) filename)])
+      (display (compile-program (call-with-input-file filename read)))))
