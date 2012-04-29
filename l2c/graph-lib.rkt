@@ -24,9 +24,6 @@
         [_ #f])
       #f))
 
-(define (reg-or-var? sym)
-  (or (register? sym) (variable? sym)))
-
 (define (symbol-by-name<? s1 s2)
   (string<? (symbol->string s1) (symbol->string s2)))
 
@@ -109,7 +106,7 @@
 (define (interfere-instruction instruction killed outs)
   (match instruction
     ; (x <- s)
-    [`(,(? reg-or-var? write) <- ,(? reg-or-var? read))
+    [`(,(? variable? write) <- ,(? variable? read))
      (interfere-special-instruction (set read write) killed outs)]
     [_ 
      (interfere-normal-instruction killed outs)]))
@@ -117,7 +114,7 @@
 (define (interfere-first-instruction instruction killed ins outs)
   (match instruction
     ; (x <- s)
-    [`(,(? reg-or-var? write) <- ,(? reg-or-var? read))
+    [`(,(? variable? write) <- ,(? variable? read))
      (interfere-special-first-instruction (set read write) killed ins outs)]
     [_ 
      (interfere-normal-first-instruction killed ins outs)]))
