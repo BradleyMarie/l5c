@@ -1,7 +1,7 @@
 all: l2c graph liveness spill
 
 l2c:
-  raco exe -o L2c l2c.rkt
+	raco exe -o L2c l2c.rkt
 
 graph:
 	raco exe -o graph graph.rkt
