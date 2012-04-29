@@ -232,3 +232,10 @@
   (format-liveness-results (liveness-function sexpr)))
 
 (provide liveness-analysis)
+
+(define (kills sexpr)
+  (map (lambda (element)
+         (set->list (cdr element)))
+       (gen-kill-function sexpr)))
+
+(provide kills)
