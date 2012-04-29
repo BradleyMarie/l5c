@@ -36,9 +36,95 @@
 (define (sop? expr)
   (set-member? (set '<<= '>>=) expr))
 
+(define (cmp? expr)
+  (set-member? (set '< '<= '= ) expr))
+
+(define (list->list-of-pairs list-of-symbols)
+  (if (empty? list-of-symbols)
+      (list)
+      (append (map (lambda (element) 
+                     (cons (first list-of-symbols) element)) 
+                   (rest list-of-symbols))
+              (list->list-of-pairs (rest list-of-symbols)))))
+
+(define (set->list-of-pairs set-of-symbols)
+  (list->list-of-pairs (set->list set-of-symbols)))
+
+;;
+;; Constraint Generation
+;;
+
+(define (instruction-constraints instruction)
+  (match instruction
+    ; (x sop= sx) ;; update x with a shifting op and sx.
+    [`(,ignore ,(? sop?) ,(? variable? read))
+     (set-add (set-subtract registers (set 'ecx)) read)]
+    ; (cx <- t cmp t) ;; save result of a comparison;
+    [`(,write <- ,ignore1 ,(? cmp?) ,ignore2)
+     (set-add (set-subtract registers (set 'edi 'esi)) write)]
+    [_ (set)]))
+
+;;
+;; Instruction Interference Generation
+;;
+
+(define (remove-if-subset st st2)
+  (if (subset? st st2)
+      (set-subtract st2 st)
+      st2))
+
+(define (remove-subsets list-of-sets st)
+  (foldl (lambda (element result)
+           (let ([new-element (remove-if-subset st element)])
+             (if (set-empty? new-element)
+                 result
+                 (cons new-element result))))
+         (list)
+         list-of-sets))
+
+(define (interfere-instruction-liveness outs) (list outs))
+
+(define (interfere-instruction-first-liveness ins outs) (list ins outs))
+
+(define (interfere-instruction-killed killed outs)
+  (set-map killed (lambda (element) (set-add outs element))))
+
+(define (interfere-normal-instruction killed outs)
+  (append (interfere-instruction-liveness outs)
+          (interfere-instruction-killed killed outs)))
+
+(define (interfere-normal-first-instruction killed ins outs)
+  (append (interfere-instruction-first-liveness ins outs)
+          (interfere-instruction-killed killed outs)))
+
+(define (interfere-special-instruction inst-set killed outs)
+  (remove-subsets (interfere-normal-instruction killed outs) inst-set))
+
+(define (interfere-special-first-instruction inst-set killed ins outs)
+  (remove-subsets (interfere-normal-first-instruction killed ins outs) inst-set))
+
+(define (interfere-instruction instruction killed outs)
+  (match instruction
+    ; (x <- s)
+    [`(,(? variable? write) <- ,(? variable? read))
+     (interfere-special-instruction (set read write) killed outs)]
+    [_ 
+     (interfere-normal-instruction killed outs)]))
+
+(define (interfere-first-instruction instruction killed ins outs)
+  (match instruction
+    ; (x <- s)
+    [`(,(? variable? write) <- ,(? variable? read))
+     (interfere-special-first-instruction (set read write) killed ins outs)]
+    [_ 
+     (interfere-normal-first-instruction killed ins outs)]))
+
 ;;
 ;; Interference Graph Generation
 ;;
+
+(define (first-set-element st)
+  (first (set->list st)))
 
 (define base-interference-graph
   (make-immutable-hash
@@ -50,14 +136,6 @@
     (cons 'edi (set-subtract registers (set 'edi)))
     (cons 'esi (set-subtract registers (set 'esi))))))
 
-(define (list->list-of-pairs list-of-symbols)
-  (if (empty? list-of-symbols)
-      (list)
-      (append (map (lambda (element) 
-                     (cons (first list-of-symbols) element)) 
-                   (rest list-of-symbols))
-              (list->list-of-pairs (rest list-of-symbols)))))
-
 (define (add-pair-to-interference-graph pair-of-symbols graph)
   (let ([car-value (hash-ref graph (car pair-of-symbols) (set))]
         [cdr-value (hash-ref graph (cdr pair-of-symbols) (set))])
@@ -67,31 +145,37 @@
                (set-add cdr-value (car pair-of-symbols)))
      (car pair-of-symbols)
      (set-add car-value (cdr pair-of-symbols)))))
-  
-(define (add-symbols-to-interference-graph symbols graph)
-  (if (and (= 1 (length symbols)) (not (hash-has-key? graph (first symbols))))
-      (hash-set graph (first symbols) (set))
+
+(define (add-set-of-symbols-to-graph symbols graph)
+  (if (and (= 1 (set-count symbols)) (not (hash-has-key? graph (first-set-element symbols))))
+      (hash-set graph (first-set-element symbols) (set))
       (foldl (lambda (pair modified-graph) 
                (add-pair-to-interference-graph pair modified-graph))
              graph
-             (list->list-of-pairs symbols))))
+             (set->list-of-pairs symbols))))
 
-(define (function-interference-graph first-instruction-ins outs graph)
-  (foldl (lambda (instruction-outs modified-graph)
-           (add-symbols-to-interference-graph instruction-outs modified-graph))
-         (add-symbols-to-interference-graph first-instruction-ins graph)
-         outs))
+(define (add-list-of-set-of-symbols-to-graph symbols graph)
+  (foldl (lambda (element result)
+           (add-set-of-symbols-to-graph element result))
+         graph
+         symbols))
 
-(define (instruction-interference-graph list-of-instructions)
-  (foldl (lambda (instruction modified-graph)
-           (match instruction
-             ; (x sop= sx) ;; update x with a shifting op and sx.
-             [`(,ignore ,(? sop?) ,(? variable? read))
-              (add-symbols-to-interference-graph (list* read (set->list (set-subtract registers (set 'ecx)))) modified-graph)]
-             
-             [_ modified-graph]))
-         base-interference-graph
-         list-of-instructions))
+(define (function-interference-graph instructions kills ins outs)
+  (foldl (lambda (instruction killed outs result)
+           (add-list-of-set-of-symbols-to-graph
+            (interfere-instruction instruction killed outs)
+            (add-set-of-symbols-to-graph
+             (instruction-constraints instruction)
+             result)))
+         (add-list-of-set-of-symbols-to-graph
+            (interfere-first-instruction (first instructions) (first kills) (first ins) (first outs))
+            (add-set-of-symbols-to-graph
+             (instruction-constraints (first instructions))
+             base-interference-graph))
+         (rest instructions)
+         (rest kills)
+         (rest outs)))
+
 ;;
 ;; Graph to Register Assignments
 ;;
@@ -224,10 +308,25 @@
 ;; Kick off the graph coloring
 ;;
 
-(define (generate-interference-graph sexpr)
+(define (list-of-list->list-of-sets lst)
+  (map list->set lst))
+
+(define (internal-kills instructions)
+  (list-of-list->list-of-sets (kills instructions)))
+
+(define (internal-liveness sexpr)
   (let ([liveness-results (liveness-analysis sexpr)])
-    (format-interference-graph (function-interference-graph (second (first liveness-results)) (rest (second liveness-results))
-                           (instruction-interference-graph sexpr)))))
+    (list (list-of-list->list-of-sets (rest (first liveness-results)))
+          (list-of-list->list-of-sets (rest (second liveness-results))))))         
+
+(define (generate-interference-graph sexpr)
+  (let ([liveness-results (internal-liveness sexpr)]
+        [killed (internal-kills sexpr)])
+    (format-interference-graph (function-interference-graph 
+                                sexpr
+                                killed ;; Kills
+                                (first liveness-results) ;; Ins
+                                (second liveness-results))))) ;; Outs
 
 (provide generate-interference-graph)
 
