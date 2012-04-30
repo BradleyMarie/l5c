@@ -27,9 +27,20 @@
 (check-expect (max-live-simultaneously '((in (eax) (eax ebx x)) (out (eax x) ()))) 2)
 (check-expect (max-live-simultaneously '((in (eax) ()) (out (eax x) () (eax ebx x)))) 3)
 
-(define (get-variables liveness)
-  (remove-duplicates (remove* registers (flatten (map rest liveness)))))
+(define (is-spilled? variable)
+  (regexp-match? "s_" (symbol->string variable)))
 
+(check-expect (is-spilled? 'test) #f)
+(check-expect (is-spilled? 's_test) #t)
+
+;; Retrieves a list of variables that have not yet been spilled
+(define (get-variables liveness)
+  (filter-not is-spilled?
+              (remove-duplicates (remove* registers
+                                          (flatten (map rest
+                                                        liveness))))))
+
+(check-expect (get-variables '((in (eax ebx s_x) (eax)) (out (eax x) ()))) '(x))
 (check-expect (get-variables '((in (eax ebx x) (eax)) (out (eax x) ()))) '(x))
 (check-expect (get-variables '((in (eax ebx x) (eax y)) (out (eax x) (a b)))) '(x y a b))
 
