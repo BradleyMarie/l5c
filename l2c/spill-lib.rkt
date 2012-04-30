@@ -140,4 +140,4 @@
     (set! prefix (symbol->string pfix))
     (append* (map spill-instruction function))))
 
-(provide spill-function)
+(provide spill-function replace-list-elements)
