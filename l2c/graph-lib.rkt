@@ -14,8 +14,10 @@
 ;;
 
 (define registers (set 'eax 'ebx 'ecx 'edi 'edx 'esi))
+(define illegal-registers (set 'ebp 'esp))
 
 (define (register? sym) (set-member? registers sym))
+(define (illegal-register? sym) (set-member? illegal-registers sym))
 
 (define (variable? sym) 
   (if (and (not (register? sym)) (symbol? sym))
@@ -23,6 +25,12 @@
         [(regexp #rx"^[a-zA-Z_-][a-zA-Z_0-9-]*$") #t]
         [_ #f])
       #f))
+
+(define (register-or-variable? sym)
+  (or (register? sym)
+      (and
+       (not (illegal-register? sym))
+       (variable? sym))))
 
 (define (symbol-by-name<? s1 s2)
   (string<? (symbol->string s1) (symbol->string s2)))
@@ -61,7 +69,7 @@
      (set-add (set-subtract registers (set 'ecx)) read)]
     ; (cx <- t cmp t) ;; save result of a comparison;
     [`(,write <- ,ignore1 ,(? cmp?) ,ignore2)
-     (set-add (set-subtract registers (set 'edi 'esi)) write)]
+     (set-add (set 'edi 'esi) write)]
     [_ (set)]))
 
 ;;
@@ -146,9 +154,33 @@
      (car pair-of-symbols)
      (set-add car-value (cdr pair-of-symbols)))))
 
+(define (add-vertex graph vertex)
+  (if (not (hash-has-key? graph vertex))
+      (hash-set graph vertex (set))
+      graph))
+
+(define (add-vertex-set graph st)
+  (foldl (lambda (element result)
+           (add-vertex result element))
+         graph
+         (set->list st)))
+
+(define (generate-initial-graph kills ins outs)
+  (foldl (lambda (in kill out result)
+           (add-vertex-set 
+            (add-vertex-set 
+             (add-vertex-set result out)
+             kill)
+            in))
+         base-interference-graph
+         kills
+         ins
+         outs))
+  
+
 (define (add-set-of-symbols-to-graph symbols graph)
-  (if (and (= 1 (set-count symbols)) (not (hash-has-key? graph (first-set-element symbols))))
-      (hash-set graph (first-set-element symbols) (set))
+  (if (= 1 (set-count symbols))
+      graph
       (foldl (lambda (pair modified-graph) 
                (add-pair-to-interference-graph pair modified-graph))
              graph
@@ -171,7 +203,8 @@
             (interfere-first-instruction (first instructions) (first kills) (first ins) (first outs))
             (add-set-of-symbols-to-graph
              (instruction-constraints (first instructions))
-             base-interference-graph))
+             ;base-interference-graph))
+             (generate-initial-graph kills ins outs)))
          (rest instructions)
          (rest kills)
          (rest outs)))
@@ -309,7 +342,8 @@
 ;;
 
 (define (list-of-list->list-of-sets lst)
-  (map list->set lst))
+  (map (lambda (item)
+         (list->set (filter register-or-variable? item))) lst))
 
 (define (internal-kills instructions)
   (list-of-list->list-of-sets (kills instructions)))
@@ -322,11 +356,13 @@
 (define (generate-interference-graph sexpr)
   (let ([liveness-results (internal-liveness sexpr)]
         [killed (internal-kills sexpr)])
-    (format-interference-graph (function-interference-graph 
-                                sexpr
-                                killed ;; Kills
-                                (first liveness-results) ;; Ins
-                                (second liveness-results))))) ;; Outs
+    (if (= (length sexpr) 0)
+        (format-interference-graph base-interference-graph)
+        (format-interference-graph (function-interference-graph 
+                                    sexpr
+                                    killed ;; Kills
+                                    (first liveness-results) ;; Ins
+                                    (second liveness-results)))))) ;; Outs
 
 (provide generate-interference-graph)
 
