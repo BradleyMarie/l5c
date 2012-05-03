@@ -83,11 +83,11 @@
         [variables (get-variables liveness)])
     (if (> (max-live-simultaneously liveness) 6)
         ;; Too many variables live at the same time -- Spill
-        (spill function num-spills liveness variables)
+        (spill function num-spills liveness)
         (let ([coloring (generate-colored-graph (generate-interference-graph function))])
           (if (false? coloring)
               ;; Bad coloring -- Spill
-              (spill function num-spills liveness variables)
+              (spill function num-spills liveness)
               ;; Good coloring -- Finish the translation
               (insert-esp-adjustment (rewrite-variables function coloring) num-spills))))))
 
