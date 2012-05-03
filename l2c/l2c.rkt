@@ -17,6 +17,13 @@
 
 (define registers '(eax ebx ecx edi edx esi))
 
+(define (label? expr)
+  (if (symbol? expr)
+      (match (symbol->string expr)
+        [(regexp #rx"^:[a-zA-Z_][a-zA-Z_0-9]*$") #t]
+        [_ #f])
+      #f))
+
 (define (max-live-simultaneously liveness)
   (let ([maximum (length (second (first liveness)))])
     (for ([outs (rest (second liveness))])
@@ -63,12 +70,17 @@
 (define (insert-esp-adjustment function num-spills)
   (if (zero? num-spills)
       function
-      (cons (list 'esp '-= (* 4 num-spills)) function)))
+      (let ([esp-adjustment (list 'esp '-= (* 4 num-spills))])
+        (if (label? (first function))
+            (list* (first function) esp-adjustment (rest function))
+            (list* esp-adjustment function)))))
 
 (check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 0)
                  '((ebx <- 1) (eax += ebx) (return)))
 (check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 2)
                  '((esp -= 8) (ebx <- 1) (eax += ebx) (return)))
+(check-expect (insert-esp-adjustment '(:label (ebx <- 1) (eax += ebx) (return)) 2)
+                 '(:label (esp -= 8) (ebx <- 1) (eax += ebx) (return)))
 
 (define (spill function num-spills liveness)
   (let ([variables (get-variables liveness)])
