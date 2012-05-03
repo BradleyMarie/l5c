@@ -7,7 +7,7 @@
 
 #lang racket
 
-(define DEVELOPMENT #t)
+(define DEVELOPMENT #f)
 
 (require "spill-lib.rkt")
 (require "liveness-lib.rkt")
@@ -70,15 +70,16 @@
 (define (insert-esp-adjustment function num-spills)
   (if (zero? num-spills)
       function
-      (let ([esp-adjustment (list 'esp '-= (* 4 num-spills))])
+      (let ([esp-adjustment (list 'esp '-= (* 4 num-spills))]
+            [esp-restore (list 'esp '+= (* 4 num-spills))])
         (if (label? (first function))
             (list* (first function) esp-adjustment (rest function))
-            (list* esp-adjustment function)))))
+            (append (cons esp-adjustment function) (list esp-restore))))))
 
 (check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 0)
                  '((ebx <- 1) (eax += ebx) (return)))
 (check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 2)
-                 '((esp -= 8) (ebx <- 1) (eax += ebx) (return)))
+                 '((ebx <- 1) (eax += ebx) (return)))
 (check-expect (insert-esp-adjustment '(:label (ebx <- 1) (eax += ebx) (return)) 2)
                  '(:label (esp -= 8) (ebx <- 1) (eax += ebx) (return)))
 
