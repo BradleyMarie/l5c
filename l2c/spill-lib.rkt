@@ -23,11 +23,11 @@
     [(list? list-of-symbols) (map (lambda (e) (replace-list-elements e find-value replace-value)) list-of-symbols)]
     [else list-of-symbols]))
 
-(define (read-memory variable offset)
-  (list variable '<- (list 'mem 'ebp offset)))
+(define (read-memory variable m_offset)
+  (list variable '<- (list 'mem 'ebp m_offset)))
 
-(define (write-memory variable offset)
-  (list (list 'mem 'ebp offset) '<- variable))
+(define (write-memory variable m_offset)
+  (list (list 'mem 'ebp m_offset) '<- variable))
 
 (define prefix-index -1)  ;; Number
 (define prefix (void))       ;; String
@@ -42,21 +42,21 @@
 (define (spill-read original-expression)
   (let ([new-variable (spill-variable)])
     (list
-      (read-memory new-variable offset)
-      (replace-list-elements original-expression old-variable new-variable))))
+     (read-memory new-variable offset)
+     (replace-list-elements original-expression old-variable new-variable))))
 
 (define (spill-write original-expression)
   (let ([new-variable (spill-variable)])
     (list
-      (replace-list-elements original-expression old-variable new-variable)
-      (write-memory new-variable offset))))
+     (replace-list-elements original-expression old-variable new-variable)
+     (write-memory new-variable offset))))
 
 (define (spill-read-write original-expression)
   (let ([new-variable (spill-variable)])
     (list
-      (read-memory new-variable offset)
-      (replace-list-elements original-expression old-variable new-variable)
-      (write-memory new-variable offset))))
+     (read-memory new-variable offset)
+     (replace-list-elements original-expression old-variable new-variable)
+     (write-memory new-variable offset))))
 
 (define (write-to-x dest)
   (list (list dest '<- (list 'mem 'ebp offset))))
@@ -136,7 +136,7 @@
 (define (spill-function function find off pfix)
   (begin
     (set! old-variable find)
-    (set! offset (number->string off))
+    (set! offset off)
     (set! prefix (symbol->string pfix))
     (append* (map spill-instruction function))))
 
