@@ -87,7 +87,7 @@
         (let ([coloring (generate-colored-graph (generate-interference-graph function))])
           (if (false? coloring)
               ;; Bad coloring -- Spill
-              (spill function num-spills liveness)
+              (spill function num-spills liveness variables)
               ;; Good coloring -- Finish the translation
               (insert-esp-adjustment (rewrite-variables function coloring) num-spills))))))
 
