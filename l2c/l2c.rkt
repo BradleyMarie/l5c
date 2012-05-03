@@ -75,7 +75,7 @@
         #f
         (let* ([var-to-spill (choose-var-to-spill variables)]
                [offset (* -4 (+ num-spills 1))]
-               [spilled-function (spill-function var-to-spill offset 's_)])
+               [spilled-function (spill-function function var-to-spill offset 's_)])
           (compile-function-rec spilled-function (+ num-spills 1))))))
 
 (define (compile-function-rec function num-spills)
