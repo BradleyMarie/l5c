@@ -7,7 +7,7 @@
 
 #lang racket
 
-(define DEVELOPMENT #f)
+(define DEVELOPMENT #t)
 
 (require "spill-lib.rkt")
 (require "liveness-lib.rkt")
@@ -27,11 +27,12 @@
 (check-expect (max-live-simultaneously '((in (eax) (eax ebx x)) (out (eax x) ()))) 2)
 (check-expect (max-live-simultaneously '((in (eax) ()) (out (eax x) () (eax ebx x)))) 3)
 
+(define spill-prefix 'THISISASUPERSECRETPREFIXYOUWILLNEVERGUESSHAHAHAHAHAHA)
 (define (is-spilled? variable)
-  (regexp-match? "s_" (symbol->string variable)))
+  (regexp-match? (symbol->string spill-prefix) (symbol->string variable)))
 
 (check-expect (is-spilled? 'test) #f)
-(check-expect (is-spilled? 's_test) #t)
+(check-expect (is-spilled? 'THISISASUPERSECRETPREFIXYOUWILLNEVERGUESSHAHAHAHAHAHA_test) #t)
 
 ;; Retrieves a list of variables that have not yet been spilled
 (define (get-variables liveness)
@@ -40,7 +41,7 @@
                                           (flatten (map rest
                                                         liveness))))))
 
-(check-expect (get-variables '((in (eax ebx s_x) (eax)) (out (eax x) ()))) '(x))
+(check-expect (get-variables '((in (eax ebx THISISASUPERSECRETPREFIXYOUWILLNEVERGUESSHAHAHAHAHAHA_x) (eax)) (out (eax x) ()))) '(x))
 (check-expect (get-variables '((in (eax ebx x) (eax)) (out (eax x) ()))) '(x))
 (check-expect (get-variables '((in (eax ebx x) (eax y)) (out (eax x) (a b)))) '(x y a b))
 
@@ -62,12 +63,12 @@
 (define (insert-esp-adjustment function num-spills)
   (if (zero? num-spills)
       function
-      (list* (list 'esp '-= (* -4 num-spills)) function)))
+      (cons (list 'esp '-= (* 4 num-spills)) function)))
 
 (check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 0)
                  '((ebx <- 1) (eax += ebx) (return)))
 (check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 2)
-                 '((esp -= -8) (ebx <- 1) (eax += ebx) (return)))
+                 '((esp -= 8) (ebx <- 1) (eax += ebx) (return)))
 
 (define (spill function num-spills liveness)
   (let ([variables (get-variables liveness)])
@@ -75,7 +76,7 @@
         #f
         (let* ([var-to-spill (choose-var-to-spill variables)]
                [offset (* -4 (+ num-spills 1))]
-               [spilled-function (spill-function function var-to-spill offset 's_)])
+               [spilled-function (spill-function function var-to-spill offset spill-prefix)])
           (compile-function-rec spilled-function (+ num-spills 1))))))
 
 (define (compile-function-rec function num-spills)
