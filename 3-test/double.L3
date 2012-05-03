@@ -1,0 +1,8 @@
+((:compare 1)
+  (:compare (i)
+            (let ((var2 8))
+              (let ((var3 (< i var2)))
+                (if var3
+                    (let ((j (* i 2)))
+                      (:compare j))
+                    (print i))))))
