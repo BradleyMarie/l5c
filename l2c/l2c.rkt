@@ -15,7 +15,9 @@
 (require racket/cmdline)
 (require test-engine/racket-tests)
 
-(define registers '(eax ebx ecx edi edx esi))
+;;
+;; Helpers
+;;
 
 (define (label? expr)
   (if (symbol? expr)
@@ -24,96 +26,49 @@
         [_ #f])
       #f))
 
-(define (max-live-simultaneously liveness)
-  (let ([maximum (length (second (first liveness)))])
-    (for ([outs (rest (second liveness))])
-      (set! maximum (max maximum (length outs))))
-    maximum))
-
-(check-expect (max-live-simultaneously '((in (eax ebx x) (eax)) (out (eax x) ()))) 3)
-(check-expect (max-live-simultaneously '((in (eax) (eax ebx x)) (out (eax x) ()))) 2)
-(check-expect (max-live-simultaneously '((in (eax) ()) (out (eax x) () (eax ebx x)))) 3)
+(define registers (set 'eax 'ebx 'ecx 'edi 'edx 'esi))
+(define (register? sym) (set-member? registers sym))
 
 (define spill-prefix 'THISISASUPERSECRETPREFIXYOUWILLNEVERGUESSHAHAHAHAHAHA)
-(define (is-spilled? variable)
-  (regexp-match? (symbol->string spill-prefix) (symbol->string variable)))
 
-(check-expect (is-spilled? 'test) #f)
-(check-expect (is-spilled? 'THISISASUPERSECRETPREFIXYOUWILLNEVERGUESSHAHAHAHAHAHA_test) #t)
+(define (get-variable-list sexpr)
+  (filter-not register? 
+              (remove-duplicates (flatten (append (kills sexpr) (gens sexpr))))))
 
-;; Retrieves a list of variables that have not yet been spilled
-(define (get-variables liveness)
-  (filter-not is-spilled?
-              (remove-duplicates (remove* registers
-                                          (flatten (map rest
-                                                        liveness))))))
-
-(check-expect (get-variables '((in (eax ebx THISISASUPERSECRETPREFIXYOUWILLNEVERGUESSHAHAHAHAHAHA_x) (eax)) (out (eax x) ()))) '(x))
-(check-expect (get-variables '((in (eax ebx x) (eax)) (out (eax x) ()))) '(x))
-(check-expect (get-variables '((in (eax ebx x) (eax y)) (out (eax x) (a b)))) '(x y a b))
-
-(define (choose-var-to-spill variables)
-  (list-ref variables (random (length variables))))
-
-(check-member-of (choose-var-to-spill '(a b c d)) 'a 'b 'c 'd)
-
-(define (rewrite-variables function coloring)
+(define (replace-variables function coloring)
   (if (empty? coloring)
       function
       (let ([variable (first (first coloring))]
             [register (second (first coloring))])
-        (rewrite-variables (replace-list-elements function variable register) (rest coloring)))))
+        (replace-variables (replace-list-elements function variable register) (rest coloring)))))
 
-(check-expect (rewrite-variables '((x <- 1) (eax += x) (return)) '((x ebx)))
-                 '((ebx <- 1) (eax += ebx) (return)))
-
-(define (insert-esp-adjustment function num-spills)
-  (if (zero? num-spills)
+(define (allocate-scratch-space function num-spilled)
+  (if (zero? num-spilled)
       function
-      (let ([esp-adjustment (list 'esp '-= (* 4 num-spills))]
-            [esp-restore (list 'esp '+= (* 4 num-spills))])
+      (let ([esp-adjustment (list 'esp '-= (* 4 num-spilled))]
+            [esp-restore (list 'esp '+= (* 4 num-spilled))])
         (if (label? (first function))
             (list* (first function) esp-adjustment (rest function))
             (append (cons esp-adjustment function) (list esp-restore))))))
 
-(check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 0)
-                 '((ebx <- 1) (eax += ebx) (return)))
-(check-expect (insert-esp-adjustment '((ebx <- 1) (eax += ebx) (return)) 2)
-                 '((ebx <- 1) (eax += ebx) (return)))
-(check-expect (insert-esp-adjustment '(:label (ebx <- 1) (eax += ebx) (return)) 2)
-                 '(:label (esp -= 8) (ebx <- 1) (eax += ebx) (return)))
 
-(define (spill function num-spills liveness)
-  (let ([variables (get-variables liveness)])
-    (if (empty? variables)
-        #f
-        (let* ([var-to-spill (choose-var-to-spill variables)]
-               [offset (* -4 (+ num-spills 1))]
-               [spilled-function (spill-function function var-to-spill offset spill-prefix)])
-          (compile-function-rec spilled-function (+ num-spills 1))))))
+(define (compile-function-rec sexpr num-spilled variables)
+  (let ([coloring (generate-colored-graph (generate-interference-graph sexpr))])
+    (if (false? coloring)
+        (if (empty? variables)
+            #f
+            (compile-function-rec (spill-function sexpr (first variables) (* -4 (+ num-spilled 1)) spill-prefix)
+                                  (+ 1 num-spilled)
+                                  (rest variables)))
+        (allocate-scratch-space (replace-variables sexpr coloring) num-spilled))))
 
-(define (compile-function-rec function num-spills)
-  (let* ([liveness (liveness-analysis function)]
-        [variables (get-variables liveness)])
-    (if (> (max-live-simultaneously liveness) 6)
-        ;; Too many variables live at the same time -- Spill
-        (spill function num-spills liveness)
-        (let ([coloring (generate-colored-graph (generate-interference-graph function))])
-          (if (false? coloring)
-              ;; Bad coloring -- Spill
-              (spill function num-spills liveness)
-              ;; Good coloring -- Finish the translation
-              (insert-esp-adjustment (rewrite-variables function coloring) num-spills))))))
+(define (compile-function sexpr)
+  (compile-function-rec sexpr 0 (get-variable-list sexpr)))
 
-(define (compile-function function)
-  (compile-function-rec function 0))
-                                
 (define (compile-program program)
   (map compile-function program))
 
-(if DEVELOPMENT
-    (test)
-    (let ([filename
-        (command-line
-         #:args (filename) filename)])
-      (display (compile-program (call-with-input-file filename read)))))
+(let ([filename
+       (command-line
+        #:args (filename) filename)])
+  (display (compile-program (call-with-input-file filename read))))

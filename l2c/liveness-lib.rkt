@@ -239,3 +239,10 @@
        (gen-kill-function sexpr)))
 
 (provide kills)
+
+(define (gens sexpr)
+    (map (lambda (element)
+         (set->list (car element)))
+       (gen-kill-function sexpr)))
+
+(provide gens)
