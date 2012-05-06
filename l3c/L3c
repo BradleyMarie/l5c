@@ -4,27 +4,34 @@
 SAVEIFS=$IFS
 IFS=$(echo -en "\n\b")
 
+getScriptPath() {
+	echo ${0%/*}/
+}
+
+scriptPath=$(getScriptPath)
+libPath=$scriptPath/lib
+
 # Compile
-./L3c-bin "$1" > "$$".L2
+$scriptPath/L3c-bin "$1" > "$scriptPath/$$".L2
 
 # Remove trailing parenthesis
-L2Code=$(<"$$".L2)
+L2Code=$(<"$scriptPath/$$".L2)
 set -- $L2Code
-echo ${L2Code%?} > "$$".L2
+echo ${L2Code%?} > "$scriptPath/$$".L2
 
 # Add L2 Libraries
-for L2Lib in $( find ./lib -name '*l2f' )
+for L2Lib in $( find $libPath -name '*l2f' )
 do
-cat $L2Lib >> "$$".L2
+cat $L2Lib >> "$scriptPath/$$".L2
 done
 
 # Add trailing parenthesis
-echo ")" >> "$$".L2
+echo ")" >> "$scriptPath/$$".L2
 
 # Print the L2 program to stdout
-cat "$$".L2
+cat "$scriptPath/$$".L2
 
 # Cleanup
-rm "$$".L2
+rm "$scriptPath/$$".L2
 
 IFS=$SAVEIFS
