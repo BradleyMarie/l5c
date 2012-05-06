@@ -60,7 +60,7 @@
 ;; L3 -> L2 Translation
 ;;
 
-(define biops (set '+ '- '= '< '<= '=))
+(define biops (set '+ '- '* '= '< '<= '=))
 (define (biop? sym) (set-member? biops sym))
    
 (define (l3-call-rec list-of-args list-of-regs output label)
