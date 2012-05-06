@@ -11,7 +11,7 @@
 ;; Helpers
 ;;
 
-(define reserved-words (set 'new-array 'new-tuple 'aref 'aset 'alen 'print 'make-closure 'closure-proc 'closure-vars))
+(define reserved-words (set 'new-array 'new-tuple 'aref 'aset 'alen 'print 'make-closure 'closure-proc 'closure-vars 'let 'if))
 (define (reserved-word? sym) (set-member? reserved-words sym))
 
 (define (label? expr)
