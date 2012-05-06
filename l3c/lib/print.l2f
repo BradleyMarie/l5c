@@ -1,2 +1,3 @@
 (:print
- (eax <- (print eax)))
+ (eax <- (print eax))
+ (return))

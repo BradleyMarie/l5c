@@ -9,7 +9,7 @@
  (call :decode)
  (decoded-v2 <- eax)
 
- (ret <- v1 = v2)
+ (ret <- decoded-v1 = decoded-v2)
 
  (eax <- ret)
  (tail-call :encode))

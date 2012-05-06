@@ -11,11 +11,13 @@
  (decodedoffset *= 4)
  (decodedoffset += 4)
 
- (cjump arrayoffset < length :valid :invald)
+ (arraybase += decodedoffset)
+
+ (cjump arrayoffset < length :valid :invalid)
  
  :valid
- (eax <- (mem arraybase decodedoffset))
+ (eax <- (mem arraybase 0))
  (return)
  
  :invalid
- (eax <- (array-error arraybase decodedoffset)))
+ (eax <- (array-error arraybase 0)))

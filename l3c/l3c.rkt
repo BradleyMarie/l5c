@@ -133,7 +133,7 @@
     (set! label-suffix (+ label-suffix 1))
     (string->symbol (string-append label-prefix (number->string label-suffix)))))
 
-(define (compile-l3e sexpr)
+(define (compile-l3e is-main-function sexpr)
   (match sexpr
     [`(if ,v ,e1 ,e2)
      (let ([true-label (next-label)]
@@ -141,13 +141,15 @@
        (append
         (list `(cjump ,v != 0 ,true-label ,false-label))
         (list true-label)
-        (compile-l3e e1)
+        (compile-l3e is-main-function e1)
         (list false-label)
-        (compile-l3e e2)))]
+        (compile-l3e is-main-function e2)))]
     [`(let ([,x ,d]) ,e)
-     (append (compile-l3d d) (list `(,x <- eax)) (compile-l3e e))]
+     (append (compile-l3d d) (list `(,x <- eax)) (compile-l3e is-main-function e))]
     [_
-     (compile-l3d sexpr)]))
+     (if is-main-function
+        (compile-l3d sexpr)
+        (append (compile-l3d sexpr) (list '(return))))]))
 
 (define (l3-answer-rec list-of-args list-of-regs output)
   (if (empty? list-of-args)
@@ -164,12 +166,12 @@
   (append
    (list (first sexpr))
    (l3-answer (second sexpr))
-   (compile-l3e (third sexpr))))
+   (compile-l3e #f (third sexpr))))
 
 (define (compile-l3p sexpr)
   (let ([translated-program (translate-l3-program sexpr)])
     (cons
-     (compile-l3e (first translated-program))
+     (compile-l3e #t (first translated-program))
      (map compile-l3f (rest translated-program)))))
 
 ;;
