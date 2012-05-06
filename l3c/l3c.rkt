@@ -181,5 +181,5 @@
   (command-line
    #:args (filename) filename))
 
-(compile-l3p (call-with-input-file filename read))
+(display (compile-l3p (call-with-input-file filename read)))
    

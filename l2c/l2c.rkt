@@ -29,7 +29,34 @@
 (define registers (set 'eax 'ebx 'ecx 'edi 'edx 'esi))
 (define (register? sym) (set-member? registers sym))
 
-(define spill-prefix 'THISISASUPERSECRETPREFIXYOUWILLNEVERGUESSHAHAHAHAHAHA)
+(define reserved-words (set 'print 'allocate 'array-error 'mem 'return 'goto 'cjump 'tail-call 'call))
+(define (reserved-word? sym) (set-member? reserved-words sym))
+
+(define (variable? expr)
+  (if (symbol? expr)
+      (if (not (reserved-word? expr))
+          (match (symbol->string expr)
+            [(regexp #rx"^[a-zA-Z_][a-zA-Z_0-9]*$") #t]
+            [_ #f])
+          #f)
+      #f))
+
+;;
+;; L2 -> L2 Translation
+;;
+
+(define (translate-l2-program sexpr)
+  (cond
+    [(label? sexpr) (string->symbol (string-append ":l2c_" (substring (symbol->string sexpr) 1)))]
+    [(variable? sexpr) (string->symbol (string-append "l2c_" (symbol->string sexpr)))]
+    [(list? sexpr) (map (lambda (e) (translate-l2-program e)) sexpr)]
+    [else sexpr]))
+
+;;
+;; L2 -> L1 Translation
+;;
+
+(define spill-prefix 'spilled)
 
 (define (get-variable-list sexpr)
   (filter-not register? 
@@ -66,7 +93,8 @@
   (compile-function-rec sexpr 0 (get-variable-list sexpr)))
 
 (define (compile-program program)
-  (map compile-function program))
+  (let ([translated-program (translate-l2-program program)])
+    (map compile-function translated-program)))
 
 (let ([filename
        (command-line
