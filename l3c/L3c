@@ -11,8 +11,7 @@ libPath=$scriptPath/lib
 "$scriptPath/L3c-bin" "$1" > "$scriptPath/$$.L2"
 
 # Remove trailing parenthesis
-L2Code="$(<$scriptPath/$$.L2)"
-set -- $L2Code
+L2Code=`cat "$scriptPath/$$.L2"`
 echo ${L2Code%?} > "$scriptPath/$$.L2"
 
 # Add L2 Libraries
