@@ -5,7 +5,7 @@ SAVEIFS=$IFS
 IFS=$(echo -en "\n\b")
 
 getScriptPath() {
-	echo ${0%/*}/
+	echo ${0%/*}
 }
 
 scriptPath=$(getScriptPath)
@@ -22,7 +22,7 @@ echo ${L2Code%?} > "$scriptPath/$$".L2
 # Add L2 Libraries
 for L2Lib in $( find $libPath -name '*l2f' )
 do
-cat $L2Lib >> "$scriptPath/$$".L2
+cat "$L2Lib" >> "$scriptPath/$$".L2
 done
 
 # Add trailing parenthesis
