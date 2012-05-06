@@ -1,0 +1,16 @@
+(((var1 <- 21) ;; loop termination variable = 10
+  (var3 <- 3) ;; start counting at 1
+  
+  (var4 <- :loop) ;;useless 
+
+  :loop
+  (cjump var3 <= var1 :print :done)
+  
+  :print
+  (eax <- (print var3)) ;; print var3
+  (var3 += 2) ;; increment var3 by 1
+  (goto :loop)
+
+  :done
+  ))
+  
