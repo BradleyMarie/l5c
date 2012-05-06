@@ -11,11 +11,23 @@
 ;; Helpers
 ;;
 
+(define reserved-words (set 'new-array 'new-tuple 'aref 'aset 'alen 'print 'make-closure 'closure-proc 'closure-vars))
+(define (reserved-word? sym) (set-member? reserved-words sym))
+
 (define (label? expr)
   (if (symbol? expr)
       (match (symbol->string expr)
         [(regexp #rx"^:[a-zA-Z_][a-zA-Z_0-9]*$") #t]
         [_ #f])
+      #f))
+
+(define (variable? expr)
+  (if (symbol? expr)
+      (if (not (reserved-word? expr))
+          (match (symbol->string expr)
+            [(regexp #rx"^[a-zA-Z_][a-zA-Z_0-9]*$") #t]
+            [_ #f])
+          #f)
       #f))
 
 ;;
@@ -40,6 +52,7 @@
   (cond
     [(number? sexpr) (encode sexpr)]
     [(label? sexpr) (string->symbol (string-append ":l3c_" (substring (symbol->string sexpr) 1)))]
+    [(variable? sexpr) (string->symbol (string-append "l3c_" (symbol->string sexpr)))]
     [(list? sexpr) (map (lambda (e) (translate-l3-instruction (translate-l3-program e))) sexpr)]
     [else sexpr]))
 
