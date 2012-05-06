@@ -1,0 +1,3 @@
+(:decode
+ (eax >>= 1)
+ (return))

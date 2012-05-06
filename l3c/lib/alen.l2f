@@ -1,0 +1,3 @@
+(:alen
+ (eax <- (mem eax 0))
+ (tail-call :encode))

@@ -1,0 +1,3 @@
+(:isNumber
+ (eax &= 1)
+ (return))

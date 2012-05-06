@@ -1,0 +1,21 @@
+(:aref
+ (arraybase <- eax)
+ (arrayoffset <- edx)
+
+ (call :alen)
+ (length <- eax)
+
+ (eax <- arrayoffset)
+ (call :decode)
+ (decodedoffset <- eax)
+ (decodedoffset *= 4)
+ (decodedoffset += 4)
+
+ (cjump arrayoffset < length :valid :invald)
+ 
+ :valid
+ (eax <- (mem arraybase decodedoffset))
+ (return)
+ 
+ :invalid
+ (eax <- (array-error arraybase decodedoffset)))

@@ -1,0 +1,16 @@
+(:add
+ (v1 <- eax)
+ (v2 <- edx)
+
+ (call :decode)
+ (decoded-v1 <- eax)
+
+ (eax <- v2)
+ (call :decode)
+ (decoded-v2 <- eax)
+
+ (ret <- v1)
+ (ret += v2)
+
+ (eax <- ret)
+ (tail-call :encode))

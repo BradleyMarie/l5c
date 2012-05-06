@@ -1,0 +1,6 @@
+(:isArray
+ (call :encode)
+ (eax &= 1)
+ (eax *= -2)
+ (eax += 3)
+ (return))

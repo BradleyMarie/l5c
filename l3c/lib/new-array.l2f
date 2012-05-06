@@ -1,0 +1,3 @@
+(:newarray
+ (eax <- (allocate eax edx)
+ (return))

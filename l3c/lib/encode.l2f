@@ -1,0 +1,4 @@
+(:encode
+ (eax <<= 1)
+ (eax += 1)
+ (return))
