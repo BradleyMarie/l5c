@@ -12,12 +12,12 @@ scriptPath=$(getScriptPath)
 libPath=$scriptPath/lib
 
 # Compile
-$scriptPath/L3c-bin "$1" > "$scriptPath/$$".L2
+"$scriptPath/L3c-bin" "$1" > "$scriptPath/$$".L2
 
 # Remove trailing parenthesis
-L2Code=$(<"$scriptPath/$$".L2)
+L2Code="$(<$scriptPath/$$.L2)"
 set -- $L2Code
-echo ${L2Code%?} > "$scriptPath/$$".L2
+echo ${L2Code%?} > "$scriptPath/$$.L2"
 
 # Add L2 Libraries
 for L2Lib in $( find $libPath -name '*l2f' )
