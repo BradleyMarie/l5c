@@ -29,12 +29,12 @@
 (define registers (set 'eax 'ebx 'ecx 'edi 'edx 'esi))
 (define (register? sym) (set-member? registers sym))
 
-(define reserved-words (set 'print 'allocate 'array-error 'mem 'return 'goto 'cjump 'tail-call 'call))
+(define reserved-words (set 'print 'allocate 'array-error 'mem 'return 'goto 'cjump 'tail-call 'call 'ebp 'esp))
 (define (reserved-word? sym) (set-member? reserved-words sym))
 
 (define (variable? expr)
   (if (symbol? expr)
-      (if (not (reserved-word? expr))
+      (if (and (not (reserved-word? expr)) (not (register? expr)))
           (match (symbol->string expr)
             [(regexp #rx"^[a-zA-Z_][a-zA-Z_0-9]*$") #t]
             [_ #f])
