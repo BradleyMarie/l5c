@@ -12,4 +12,4 @@
  (ret <- decoded-v1 <= decoded-v2)
 
  (eax <- ret)
- (tail-call :encode))
+ (return))

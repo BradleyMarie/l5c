@@ -139,10 +139,10 @@
      (let ([true-label (next-label)]
            [false-label (next-label)])
        (append
-        (list `(cjump ,v != 0 ,true-label ,false-label))
-        (list true-label)
-        (compile-l3e is-main-function e1)
+        (list `(cjump ,v = 0 ,true-label ,false-label))
         (list false-label)
+        (compile-l3e is-main-function e1)
+        (list true-label)
         (compile-l3e is-main-function e2)))]
     [`(let ([,x ,d]) ,e)
      (append (compile-l3d d) (list `(,x <- eax)) (compile-l3e is-main-function e))]
