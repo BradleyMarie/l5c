@@ -13,7 +13,7 @@ set -- $L2Code
 echo ${L2Code%?} > "$$".L2
 
 # Add L2 Libraries
-for L2Lib in $( find ./lib -name '*L2f' )
+for L2Lib in $( find ./lib -name '*l2f' )
 do
 cat $L2Lib >> "$$".L2
 done
