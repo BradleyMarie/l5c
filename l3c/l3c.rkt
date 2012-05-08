@@ -31,7 +31,7 @@
       #f))
 
 ;;
-;; L3 -> L3 Translation
+;; L3 -> "Encoded L3" Translation
 ;;
 
 (define (translate-l3-instruction sexpr)
@@ -139,7 +139,7 @@
      (let ([true-label (next-label)]
            [false-label (next-label)])
        (append
-        (list `(cjump ,v = 0 ,true-label ,false-label))
+        (list `(cjump ,v = 1 ,true-label ,false-label))
         (list false-label)
         (compile-l3e is-main-function e1)
         (list true-label)

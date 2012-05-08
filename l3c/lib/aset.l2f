@@ -1,24 +1,5 @@
 (:aset
- (arraybase <- eax)
- (arrayoffset <- edx)
  (value <- ecx)
-
- (call :alen)
- (length <- eax)
-
- (eax <- arrayoffset)
- (call :decode)
- (decodedoffset <- eax)
- (decodedoffset *= 4)
- (decodedoffset += 4)
-
- (arraybase += decodedoffset)
-
- (cjump arrayoffset < length :bounds_pass :bounds_fail)
- 
- :bounds_pass
- ((mem arraybase 0) <- value)
- (return)
-
- :bounds_fail
- (eax <- (array-error arraybase 0)))
+ (call :boundscheck)
+ ((mem eax 0) <- value)
+ (return))
