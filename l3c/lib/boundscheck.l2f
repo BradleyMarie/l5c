@@ -1,0 +1,26 @@
+(:boundscheck
+ (arraybase <- eax)
+ (arrayoffset <- edx)
+ 
+ (call :alen)
+ 
+ (eax <- arrayoffset)
+ (call :decode)
+ (decodedoffset <- eax)
+ (decodedoffset *= 4)
+ (decodedoffset += 4)
+ 
+ (arraybase += decodedoffset)
+ 
+ (cjump decodedoffset > 0 :valid1 :invalid)
+ 
+ :valid1
+ 
+ (cjump decodedoffset < length :valid2 :invalid)
+ 
+ :valid2
+ (eax <- arraybase)
+ (return)
+ 
+ :invalid
+ (eax <- (array-error arraybase 0)))
