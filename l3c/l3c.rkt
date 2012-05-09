@@ -11,7 +11,8 @@
 ;; Helpers
 ;;
 
-(define reserved-words (set 'new-array 'new-tuple 'aref 'aset 'alen 'print 'make-closure 'closure-proc 'closure-vars 'let 'if))
+(define reserved-words (set 'new-array 'new-tuple 'aref 'aset 'alen 'print '-
+                            'make-closure 'closure-proc 'closure-vars 'let 'if))
 (define (reserved-word? sym) (set-member? reserved-words sym))
 
 (define (label? expr)
@@ -25,7 +26,7 @@
   (if (symbol? expr)
       (if (not (reserved-word? expr))
           (match (symbol->string expr)
-            [(regexp #rx"^[a-zA-Z_][a-zA-Z_0-9]*$") #t]
+            [(regexp #rx"^[a-zA-Z_-][a-zA-Z_0-9-]*$") #t]
             [_ #f])
           #f)
       #f))
@@ -96,7 +97,7 @@
    (foldl (lambda (x result)
             (append
              result
-             (list `((mem eax ,(* 4 (length result))) <- ,x))))
+             (list `((mem eax ,(* 4 (+ (length result) 1))) <- ,x))))
             (list)
             args)))
   
@@ -114,8 +115,8 @@
      (compile-new-tuple v1)]
     [`(aref ,v1 ,v2)
      (l3-call (list v1 v2) ':aref)]
-    [`(aset ,v1 ,v2)
-     (l3-call (list v1 v2) ':aset)]
+    [`(aset ,v1 ,v2 ,v3)
+     (l3-call (list v1 v2 v3) ':aset)]
     [`(alen ,v1)
      (l3-call (list v1) ':alen)]
     [`(print ,v1)
@@ -148,7 +149,7 @@
      (append (compile-l3d d) (list `(,x <- eax)) (compile-l3e is-main-function e))]
     [_
      (if is-main-function
-        (compile-l3d sexpr)
+        (append (compile-l3d sexpr) (list '(goto :end)))
         (append (compile-l3d sexpr) (list '(return))))]))
 
 (define (l3-answer-rec list-of-args list-of-regs output)
@@ -171,7 +172,7 @@
 (define (compile-l3p sexpr)
   (let ([translated-program (translate-l3-program sexpr)])
     (cons
-     (compile-l3e #t (first translated-program))
+     (append (compile-l3e #t (first translated-program)) (list ':end))
      (map compile-l3f (rest translated-program)))))
 
 ;;

@@ -36,7 +36,7 @@
   (if (symbol? expr)
       (if (and (not (reserved-word? expr)) (not (register? expr)))
           (match (symbol->string expr)
-            [(regexp #rx"^[a-zA-Z_][a-zA-Z_0-9]*$") #t]
+            [(regexp #rx"^[a-zA-Z_-][a-zA-Z_0-9-]*$") #t]
             [_ #f])
           #f)
       #f))

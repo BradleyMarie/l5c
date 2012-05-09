@@ -1,6 +1,5 @@
 (:isArray
- (call :encode)
  (eax &= 1)
- (eax *= -2)
- (eax += 3)
- (return))
+ (eax += 1)
+ (eax &= 1)
+ (tail-call :encode))
