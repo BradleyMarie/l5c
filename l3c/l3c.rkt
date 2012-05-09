@@ -30,6 +30,9 @@
           #f)
       #f))
 
+(define (encode number)
+  (+ 1 (* 2 number)))
+
 ;;
 ;; L3 -> "Encoded L3" Translation
 ;;
@@ -44,9 +47,6 @@
      `(aref ,v 1)]
     [_
      sexpr]))
-
-(define (encode number)
-  (+ 1 (* 2 number)))
 
 (define (translate-l3-program sexpr)
   (cond
@@ -92,7 +92,7 @@
 
 (define (compile-new-tuple args)
   (cons
-   `(eax <- (allocate ,(length args) 0))
+   `(eax <- (allocate ,(encode (length args)) 1))
    (foldl (lambda (x result)
             (append
              result

@@ -1,4 +1,4 @@
 (:sub
  (eax -= edx)
- (edx += 1)
+ (eax += 1)
  (return))

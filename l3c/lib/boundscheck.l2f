@@ -12,7 +12,7 @@
  
  (arraybase += decodedoffset)
  
- (cjump decodedoffset > 0 :valid1 :invalid)
+ (cjump 0 <= decodedoffset :valid1 :invalid)
  
  :valid1
  

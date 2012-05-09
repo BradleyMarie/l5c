@@ -1,4 +1,4 @@
-(:lt
+(:eq
  (ecx <- eax = edx)
  (eax <- ecx)
  (tail-call :encode))
