@@ -2,4 +2,5 @@
  (value <- ecx)
  (call :boundscheck)
  ((mem eax 0) <- value)
+ (eax <- 1)
  (return))
