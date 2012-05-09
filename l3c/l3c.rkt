@@ -43,9 +43,9 @@
     [`(make-closure ,l ,v)
      `(new-tuple ,l ,v)]
     [`(closure-proc ,v)
-     `(aref ,v 0)]
+     `(aref ,v ,(encode 0))]
     [`(closure-vars ,v)
-     `(aref ,v 1)]
+     `(aref ,v ,(encode 1))]
     [_
      sexpr]))
 
