@@ -150,7 +150,12 @@
     [_
      (if is-main-function
         (append (compile-l3d sexpr) (list '(goto :end)))
-        (append (compile-l3d sexpr) (list '(return))))]))
+        (let ([compiled-d (compile-l3d sexpr)])
+          (match (last compiled-d)
+            [`(call ,label)
+             (append (take compiled-d (- (length compiled-d) 1)) (list `(tail-call ,label)))]
+            [_
+             (append compiled-d (list '(return)))])))]))
 
 (define (l3-answer-rec list-of-args list-of-regs output)
   (if (empty? list-of-args)
