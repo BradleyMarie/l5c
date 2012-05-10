@@ -1,0 +1,9 @@
+((:loop 1)
+  (:loop (i)
+         (let ((x (print i)))
+           (let ((limit 10))
+             (let ((more (< i limit)))
+               (if more
+                   (let ((j (+ i 1)))
+                     (:loop j))
+                   1))))))
