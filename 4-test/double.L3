@@ -1,0 +1,5 @@
+((:compare 1)
+  (:compare (i)
+    (if (< i 8)
+        (:compare (* i 2))
+      (print i))))
