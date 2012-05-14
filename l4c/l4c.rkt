@@ -57,7 +57,7 @@
 (define (translate-l4-instruction sexpr)
   (match sexpr
     [`(begin ,e1 ,e2)
-     `(let ((,(new-variable) ,e1) ,e2))]
+     `(let ((,(new-variable) ,e1)) ,e2)]
     [_
      sexpr]))
 
@@ -160,4 +160,4 @@
   (command-line
    #:args (filename) filename))
 
-(display (normalize-program (call-with-input-file filename read)))
+(display (normalize-program (translate-l4-program (call-with-input-file filename read))))
