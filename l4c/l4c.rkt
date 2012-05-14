@@ -151,4 +151,13 @@
    (norm (first sexpr))
    (map normalize-function (rest sexpr))))
 
+;;
+;; Compile the file specified on the command line
+;;
 
+(require racket/cmdline)
+(define filename
+  (command-line
+   #:args (filename) filename))
+
+(display (normalize-program (call-with-input-file filename read)))
