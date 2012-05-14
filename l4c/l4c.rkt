@@ -133,7 +133,7 @@
                                (fill (append p (list arg)) k)))
                   (maybe-let d
                              (λ (arg)
-                               (fill (first a) (arg-ctxt (append p (list arg)) (rest a) k)))))]
+                               (find (first a) (arg-ctxt (append p (list arg)) (rest a) k)))))]
     [no-ctxt () d]))
 
 ; norm: L4-e → L3-e
