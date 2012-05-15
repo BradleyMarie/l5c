@@ -117,22 +117,26 @@
                  ,(find b k))]
     [if-ctxt (t e k)
              (maybe-let d
-                        (λ (v)
+                        (lambda (v)
                           `(if ,v
                                ,(find t k)
                                ,(find e k))))]
     [fun-ctxt (a k)
-              (maybe-let d
-                         (λ (d)
-                           (find (first a) (arg-ctxt (list d) (rest a) k))))]
+              (if (empty? a)
+                  (maybe-let d
+                             (lambda (d)
+                               (fill (list d) k)))
+                  (maybe-let d
+                             (lambda (d)
+                               (find (first a) (arg-ctxt (list d) (rest a) k)))))]
     
     [arg-ctxt (p a k)
               (if (empty? a)
                   (maybe-let d
-                             (λ (arg)
+                             (lambda (arg)
                                (fill (append p (list arg)) k)))
                   (maybe-let d
-                             (λ (arg)
+                             (lambda (arg)
                                (find (first a) (arg-ctxt (append p (list arg)) (rest a) k)))))]
     [no-ctxt () d]))
 
