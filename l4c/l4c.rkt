@@ -79,8 +79,6 @@
   [if-ctxt (t L4-e?)
            (e L4-e?)
            (k context?)]
-  [fun-ctxt (a (listof L4-e?))
-            (k context?)]
   [arg-ctxt (p (listof L3-v?))
             (a (listof L4-e?))
             (k context?)]
@@ -99,7 +97,7 @@
     [(? L3-v?)
      (fill e k)]
     [`(,f ,a ...)
-     (find f (fun-ctxt a k))]))
+     (find f (arg-ctxt (list) a k))]))
 
 ; maybe-let: L3-d (val → L3-e) → L3-e
 
@@ -121,14 +119,6 @@
                           `(if ,v
                                ,(find t k)
                                ,(find e k))))]
-    [fun-ctxt (a k)
-              (if (empty? a)
-                  (maybe-let d
-                             (lambda (d)
-                               (fill (list d) k)))
-                  (maybe-let d
-                             (lambda (d)
-                               (find (first a) (arg-ctxt (list d) (rest a) k)))))]
     
     [arg-ctxt (p a k)
               (if (empty? a)
@@ -164,4 +154,4 @@
   (command-line
    #:args (filename) filename))
 
-(display (normalize-program (translate-l4-program (call-with-input-file filename read))))
+(pretty-display (normalize-program (translate-l4-program (call-with-input-file filename read))))
