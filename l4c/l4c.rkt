@@ -68,6 +68,24 @@
     [(list? sexpr) (map (lambda (e) (translate-l4-instruction (translate-l4-program e))) sexpr)]
     [else sexpr]))
 
+(define (rename-variable sexpr original-name new-name)
+  (cond
+    [(and (variable? sexpr) (eq? sexpr original-name)) new-name]
+    [(list? sexpr) (map (lambda (e) (rename-variable e original-name new-name)) sexpr)]
+    [else sexpr]))
+
+(define (rename-let-variables sexpr)
+  (match sexpr
+    [`(let ([,x ,r]) ,b)
+     (let ((new-var (new-variable)))
+       `(let ([,new-var ,r])       
+          ,(rename-let-variables
+            (rename-variable b x new-var))))]
+    [else
+     (if (list? sexpr)
+         (map rename-let-variables sexpr)
+         sexpr)]))
+             
 ;;
 ;; Type Definition
 ;;
@@ -154,4 +172,6 @@
   (command-line
    #:args (filename) filename))
 
-(pretty-display (normalize-program (translate-l4-program (call-with-input-file filename read))))
+(pretty-display (normalize-program 
+                 (rename-let-variables
+                  (translate-l4-program (call-with-input-file filename read)))))
