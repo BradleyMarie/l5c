@@ -1,0 +1,3 @@
+((print (:area 100 200))
+ (:area (x y)
+  (* x y)))

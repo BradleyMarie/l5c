@@ -1,0 +1,5 @@
+(letrec ((fact (lambda (num) 
+             (if (= num 0)
+                 1
+                 (* num (fact (- num 1)))))))
+  (print (:fact 10)))
