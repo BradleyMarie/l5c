@@ -9,19 +9,19 @@ getScriptPath() {
 }
 
 #preprocess 
-./L1c-preprocessor "$1" > "$$".L1
+$(getScriptPath)/L1c-preprocessor "$1" > "$$".L1
 
 # Compile
 
-cat header.s > "$$".s
+cat $(getScriptPath)/header.s > "$$".s
 $(getScriptPath)/L1c-bin "$1" >> "$$".s
-cat footer.s >> "$$".s
+cat $(getScriptPath)/footer.s >> "$$".s
 
 # Assemble
 as -32 -o "$$".o "$$".s
 
 # Link
-gcc -m32 -o a.out "$$".o runtime/runtime.o
+gcc -m32 -o a.out "$$".o $(getScriptPath)/runtime/runtime.o
 
 # Cleanup
 rm "$$".s "$$".o "$$".L1

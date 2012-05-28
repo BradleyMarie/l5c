@@ -7,7 +7,7 @@
 
 #lang racket
 
-(print-only-errors #t)
+;(print-only-errors #t)
 
 (define (num? expr)
   (number? expr))
