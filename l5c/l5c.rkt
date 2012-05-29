@@ -20,9 +20,32 @@
 
 (define (reserved-word? sym) (set-member? reserved-words sym))
 
+(define biop (set '+ '- '* '< '<= '=))
+(define (biop? sexpr)
+  (set-member? biop sexpr))
+
+(define l4-reserved-words (set 
+                        '+ '- '* '< '<= '=
+                        'number? 'a?
+                        'lambda 'new-array 'aref 'aset 'alen 
+                        'begin 'print 'new-tuple 
+                        'make-closure 'closure-proc 'closure-vars
+                        'let 'letrec 'if))
+
+(define (l4-reserved-word? sym) (set-member? l4-reserved-words sym))
+
 (define (variable? expr)
   (if (symbol? expr)
       (if (not (reserved-word? expr))
+          (match (symbol->string expr)
+            [(regexp #rx"^[a-zA-Z_-][a-zA-Z_0-9-]*$") #t]
+            [_ #f])
+          #f)
+      #f))
+
+(define (l4-variable? expr)
+  (if (symbol? expr)
+      (if (not (l4-reserved-word? expr))
           (match (symbol->string expr)
             [(regexp #rx"^[a-zA-Z_-][a-zA-Z_0-9-]*$") #t]
             [_ #f])
@@ -96,6 +119,19 @@
      (if (list? sexpr)
          (map remove-letrecs sexpr)
          sexpr)]))
+
+(define (remove-biops sexpr)
+  (if (list? sexpr)
+      (cons 
+       (if (biop? (first sexpr))
+           (first sexpr)
+           (remove-biops (first sexpr)))
+       (map remove-biops (rest sexpr)))
+      (if (biop? sexpr)
+          (let [(var1 (new-variable))
+                (var2 (new-variable))]
+            `(lambda (,var1 ,var2) (,sexpr ,var1 ,var2)))
+          sexpr)))
 ;    
 ;    [(or (number? sexpr) (variable? sexpr)) sexpr]
 ;    [(or (list? (first sexpr)) (variable? (first sexpr)))
@@ -107,7 +143,7 @@
 ;    [else (map remove-application-expressions sexpr)]))
 
 (define (preprocess-l5-program sexpr)
-  (remove-letrecs (rename-let-variables sexpr)))
+  (remove-letrecs (remove-biops (rename-let-variables sexpr))))
 
 ;;
 ;; Helper functions
@@ -172,7 +208,8 @@
             (free-variable-map (variable-list-to-mapping free-variable-list))]
            (list 
             `(make-closure ,new-function-name ,(cons 'new-tuple free-variable-list))
-            (rewrite-lambda-expression new-function-name sexpr free-variable-map)))]
+            (list 
+             (rewrite-lambda-expression new-function-name sexpr free-variable-map))))]
     
     [_ (if (list? sexpr)
              (foldl
@@ -184,24 +221,22 @@
               (map lift-lambdas sexpr))
            (list sexpr (list)))]))
 
-(define (lift-all-lambdas-rec first-order-functions lifted-expressions first-iteration)
+(define (lift-all-lambdas-rec first-order-functions lifted-expressions)
   (if (empty? lifted-expressions)
-      (if first-iteration
-          (list first-order-functions)
-          first-order-functions)
+      first-order-functions
       (let [(result (lift-lambdas lifted-expressions))]
         (lift-all-lambdas-rec
-         (append (list first-order-functions) (list (first result)))
-         (second result)
-         #f))))
+         (append (list first-order-functions) (first result))
+         (second result)))))
 
 (define (lift-all-lambdas sexpr)
-  (let [(result (lift-lambdas sexpr))]
+  (let* [(result (lift-lambdas sexpr))]
+    (if (empty? (second result))
+        (list sexpr)
         (lift-all-lambdas-rec
          (first result)
-         (second result)
-         #t)))
-
+         (second result)))))
+    
 (define (wrap-application-expression func args)
   (let [(new-func-var (new-variable))]
         `(let ([,new-func-var ,func])
@@ -214,26 +249,46 @@
               new-func-var)
              args))))
 
-(define (remove-application-expressions-rec sexpr)
-  (cond
-    [(or (not (list? sexpr))
-         (= 1 (length sexpr))) sexpr]
-    [(match (first sexpr)
-       ;[`(lambda (,args ...) ,e) #t]
-       ;[`(letrec ([,x ,r]) ,b) #t]
-       [`(make-closure ,x (new-tuple ,y ...)) #t]
-       [`(let ([,x ,r]) ,b) #t]
-       [(? variable?) #t]
-       [_
-        #f])
-     (wrap-application-expression (first sexpr) (rest sexpr))]
-    [else
-     (cons (first sexpr) (map remove-application-expressions-rec (rest sexpr)))]))
+(define (could-be-app-expr sexpr)
+  (match sexpr
+    ;[`(lambda (,args ...) ,e) #t]
+    ;[`(letrec ([,x ,r]) ,b) #t]
+    [`(make-closure ,x (new-tuple ,a ...)) #t]
+    [`(let ([,x ,r]) ,b) #t]
+    [`(aref ,x ,y) #t]
+    ;[(? variable?) #t]
+    [_
+     #f]))
 
-(define (remove-application-expressions sexpr)
+(define (application-expression? sexpr)
+  (and (list? sexpr)
+       (or (could-be-app-expr (first sexpr))
+           (l4-variable? (first sexpr)))))
+
+(define (remove-application-expressions-rec sexpr)
+  (if (application-expression? sexpr)
+      (wrap-application-expression (first sexpr) (rest sexpr))
+      (if (list? sexpr)
+          (if (match sexpr
+                [`(let ([,x ,r]) ,b) #t]
+                [_ #f])
+              `(let 
+                   ((,(first (first (second sexpr)))
+                     ,(remove-application-expressions-rec (second (first (second sexpr))))))
+                 ,(remove-application-expressions-rec (third sexpr)))
+              (map remove-application-expressions-rec sexpr))
+          sexpr)))
+
+(define (remove-application-expressions-rec2 sexpr)
   (cons
    (remove-application-expressions-rec (first sexpr))
    (map (lambda (expr) (list (first expr) (second expr) (remove-application-expressions-rec (third expr)))) (rest sexpr))))
+
+(define (remove-application-expressions sexpr)
+  (let [(result (remove-application-expressions-rec2 sexpr))]
+    (if (equal? sexpr result)
+        sexpr
+        (remove-application-expressions result))))
 
 ;;
 ;; Compile the file specified on the command line
