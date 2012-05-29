@@ -20,13 +20,6 @@
 
 (define (reserved-word? sym) (set-member? reserved-words sym))
 
-(define (label? expr)
-  (if (symbol? expr)
-      (match (symbol->string expr)
-        [(regexp #rx"^:[a-zA-Z_][a-zA-Z_0-9]*$") #t]
-        [_ #f])
-      #f))
-
 (define (variable? expr)
   (if (symbol? expr)
       (if (not (reserved-word? expr))
@@ -35,11 +28,6 @@
             [_ #f])
           #f)
       #f))
-
-(define (L3-v? sexpr)
-  (or (variable? sexpr) (label? sexpr) (number? sexpr) (reserved-word? sexpr)))
-
-(define (L4-e? sexpr) #t)
 
 (define variable-suffix -1)
 (define variable-prefix "newvar")
@@ -63,13 +51,6 @@
 ;; Variable/Label Renaming
 ;;
 
-(define (rename-input-program sexpr)
-  (cond
-    [(label? sexpr) (string->symbol (string-append ":l5c_" (substring (symbol->string sexpr) 1)))]
-    [(variable? sexpr) (string->symbol (string-append "l5c_" (symbol->string sexpr)))]
-    [(list? sexpr) (map (lambda (e) (rename-input-program e)) sexpr)]
-    [else sexpr]))
-
 (define (rename-variable sexpr original-name new-name)
   (cond
     [(and (variable? sexpr) (eq? sexpr original-name)) new-name]
@@ -80,13 +61,13 @@
   (match sexpr
     [`(let ([,x ,r]) ,b)
      (let ((new-var (new-variable)))
-       `(let ([,new-var ,r])       
+       `(let ([,new-var ,(rename-let-variables r)])       
           ,(rename-let-variables
             (rename-variable b x new-var))))]
     
     [`(letrec ([,x ,r]) ,b)
      (let ((new-var (new-variable)))
-       `(letrec ([,new-var ,(rename-variable r x new-var)])       
+       `(letrec ([,new-var ,(rename-variable (rename-let-variables r) x new-var)])       
           ,(rename-let-variables
             (rename-variable b x new-var))))]
     
@@ -115,33 +96,6 @@
      (if (list? sexpr)
          (map remove-letrecs sexpr)
          sexpr)]))
-
-(define (wrap-application-expression func args)
-  (let [(new-func-var (new-variable))]
-        `(let ([,new-func-var ,func])
-           ,(list* 
-             (list
-              'closure-proc
-              new-func-var)
-             (list
-              'closure-vars
-              new-func-var)
-             args))))
-
-(define (remove-application-expressions sexpr)
-  (cond
-    [(not (list? sexpr)) sexpr]
-    [(match (first sexpr)
-       [`(lambda (,args ...) ,e) #t]
-       [`(letrec ([,x ,r]) ,b) #t]
-       [`(let ([,x ,r]) ,b) #t]
-       [(? variable?) #t]
-       [_
-        #f])
-     (wrap-application-expression (first sexpr) (rest sexpr))]
-    [else
-     (cons (first sexpr) (map remove-application-expressions (rest sexpr)))]))
-    
 ;    
 ;    [(or (number? sexpr) (variable? sexpr)) sexpr]
 ;    [(or (list? (first sexpr)) (variable? (first sexpr)))
@@ -153,7 +107,7 @@
 ;    [else (map remove-application-expressions sexpr)]))
 
 (define (preprocess-l5-program sexpr)
-  (remove-application-expressions (remove-letrecs (rename-let-variables (rename-input-program sexpr)))))
+  (remove-letrecs (rename-let-variables sexpr)))
 
 ;;
 ;; Helper functions
@@ -196,10 +150,10 @@
     [else sexpr]))
 
 (define (rewrite-lambda-expression function-name sexpr free-variable-map)
-  (let [(arguments (second sexpr))]
-    (if (<= (length arguments) 2) ;; Yes free variable closure
-        `(,function-name ,(cons 'closure arguments) ,(rewrite-lambda-expression-rec (third sexpr) free-variable-map (hash))) ;; No argument closure
-        `(,function-name (closure arguments) ,(rewrite-lambda-expression-rec (third sexpr) free-variable-map (variable-list-to-mapping arguments)))))) ;; Yes argument closure
+  (let [(args (second sexpr))]
+    (if (<= (length args) 2) ;; Yes free variable closure
+        `(,function-name ,(cons 'closure args) ,(rewrite-lambda-expression-rec (third sexpr) free-variable-map (hash))) ;; No argument closure
+        `(,function-name (closure arguments) ,(rewrite-lambda-expression-rec (third sexpr) free-variable-map (variable-list-to-mapping args)))))) ;; Yes argument closure
 
 ;    (if (= 0 (hash-count free-variable-map)) 
 ;        (if (<= (length arguments) 3) ;; No free variable closure
@@ -247,12 +201,46 @@
          (first result)
          (second result)
          #t)))
+
+(define (wrap-application-expression func args)
+  (let [(new-func-var (new-variable))]
+        `(let ([,new-func-var ,func])
+           ,(list* 
+             (list
+              'closure-proc
+              new-func-var)
+             (list
+              'closure-vars
+              new-func-var)
+             args))))
+
+(define (remove-application-expressions-rec sexpr)
+  (cond
+    [(or (not (list? sexpr))
+         (= 1 (length sexpr))) sexpr]
+    [(match (first sexpr)
+       ;[`(lambda (,args ...) ,e) #t]
+       ;[`(letrec ([,x ,r]) ,b) #t]
+       [`(make-closure ,x (new-tuple ,y ...)) #t]
+       [`(let ([,x ,r]) ,b) #t]
+       [(? variable?) #t]
+       [_
+        #f])
+     (wrap-application-expression (first sexpr) (rest sexpr))]
+    [else
+     (cons (first sexpr) (map remove-application-expressions-rec (rest sexpr)))]))
+
+(define (remove-application-expressions sexpr)
+  (cons
+   (remove-application-expressions-rec (first sexpr))
+   (map (lambda (expr) (list (first expr) (second expr) (remove-application-expressions-rec (third expr)))) (rest sexpr))))
+
 ;;
 ;; Compile the file specified on the command line
 ;;
 
 (define (compile-program sexpr)
- (lift-all-lambdas (preprocess-l5-program sexpr)))
+ (remove-application-expressions (lift-all-lambdas (preprocess-l5-program sexpr))))
 
 (require racket/cmdline)
 (define filename
