@@ -116,8 +116,8 @@
   (match sexpr
     [`(letrec ([,x ,e1]) ,e2)
      `(let ((,x (new-tuple 0))) 
-        (begin (aset ,x 0 ,(rename-variable e1 x `(aref ,x 0))) 
-               ,(rename-variable e2 x `(aref ,x 0))))]
+        (begin (aset ,x 0 ,(rename-variable (remove-letrecs e1) x `(aref ,x 0))) 
+               ,(rename-variable (remove-letrecs e2) x `(aref ,x 0))))]
     [_
      (if (list? sexpr)
          (map remove-letrecs sexpr)
@@ -145,15 +145,6 @@
             `(lambda (,var1 ,var2 ,var3) (,sexpr ,var1 ,var2 ,var3)))]
         [else
           sexpr])))
-;    
-;    [(or (number? sexpr) (variable? sexpr)) sexpr]
-;    [(or (list? (first sexpr)) (variable? (first sexpr)))
-;     (let [(new-func-var (new-variable))]
-;       `(let ([,new-func-var ,(first sexpr)])
-;          ((closure-proc ,new-func-var)
-;           (closure-vars ,new-func-var)
-;           ,(map remove-application-expressions (rest sexpr)))))]
-;    [else (map remove-application-expressions sexpr)]))
 
 (define (preprocess-l5-program sexpr)
   (remove-letrecs (remove-built-in-funcs (rename-let-variables sexpr))))
