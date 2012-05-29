@@ -24,6 +24,9 @@
 (define (biop? sexpr)
   (set-member? biop sexpr))
 
+(define builtin (set 'number? 'a?))
+(define (builtin? sym) (set-member? builtin sym))
+
 (define l4-reserved-words (set 
                         '+ '- '* '< '<= '=
                         'number? 'a?
@@ -120,18 +123,23 @@
          (map remove-letrecs sexpr)
          sexpr)]))
 
-(define (remove-biops sexpr)
+(define (remove-built-in-funcs sexpr)
   (if (list? sexpr)
       (cons 
-       (if (biop? (first sexpr))
+       (if (or (biop? (first sexpr)) (builtin? (first sexpr)))
            (first sexpr)
-           (remove-biops (first sexpr)))
-       (map remove-biops (rest sexpr)))
-      (if (biop? sexpr)
+           (remove-built-in-funcs (first sexpr)))
+       (map remove-built-in-funcs (rest sexpr)))
+      (cond
+        [(biop? sexpr)
           (let [(var1 (new-variable))
                 (var2 (new-variable))]
-            `(lambda (,var1 ,var2) (,sexpr ,var1 ,var2)))
-          sexpr)))
+            `(lambda (,var1 ,var2) (,sexpr ,var1 ,var2)))]
+        [(builtin? sexpr)
+         (let [(var1 (new-variable))]
+            `(lambda (,var1) (,sexpr ,var1)))]
+        [else
+          sexpr])))
 ;    
 ;    [(or (number? sexpr) (variable? sexpr)) sexpr]
 ;    [(or (list? (first sexpr)) (variable? (first sexpr)))
@@ -143,7 +151,7 @@
 ;    [else (map remove-application-expressions sexpr)]))
 
 (define (preprocess-l5-program sexpr)
-  (remove-letrecs (remove-biops (rename-let-variables sexpr))))
+  (remove-letrecs (remove-built-in-funcs (rename-let-variables sexpr))))
 
 ;;
 ;; Helper functions
