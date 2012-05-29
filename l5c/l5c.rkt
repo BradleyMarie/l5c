@@ -20,11 +20,11 @@
 
 (define (reserved-word? sym) (set-member? reserved-words sym))
 
-(define biop (set '+ '- '* '< '<= '=))
+(define biop (set '+ '- '* '< '<= '= 'alen 'aref 'new-array))
 (define (biop? sexpr)
   (set-member? biop sexpr))
 
-(define builtin (set 'number? 'a?))
+(define builtin (set 'number? 'a? 'print 'alen))
 (define (builtin? sym) (set-member? builtin sym))
 
 (define l4-reserved-words (set 
@@ -126,7 +126,7 @@
 (define (remove-built-in-funcs sexpr)
   (if (list? sexpr)
       (cons 
-       (if (or (biop? (first sexpr)) (builtin? (first sexpr)))
+       (if (or (biop? (first sexpr)) (builtin? (first sexpr)) (equal? 'aset (first sexpr)))
            (first sexpr)
            (remove-built-in-funcs (first sexpr)))
        (map remove-built-in-funcs (rest sexpr)))
@@ -138,6 +138,11 @@
         [(builtin? sexpr)
          (let [(var1 (new-variable))]
             `(lambda (,var1) (,sexpr ,var1)))]
+        [(equal? 'aset sexpr)
+         (let [(var1 (new-variable))
+               (var2 (new-variable))
+               (var3 (new-variable))]
+            `(lambda (,var1 ,var2 ,var3) (,sexpr ,var1 ,var2 ,var3)))]
         [else
           sexpr])))
 ;    
