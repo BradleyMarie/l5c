@@ -264,7 +264,9 @@
          (list
           'closure-vars
           new-func-var)
-         args))))
+         (if (> (length args) 2)
+             (list (list* 'new-tuple args))
+             args)))))
 
 (define (could-be-app-expr sexpr)
   (match sexpr
