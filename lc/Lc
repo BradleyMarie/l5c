@@ -9,12 +9,13 @@ getScriptPath() {
 }
 
 # Compile
-$(getScriptPath)/l4c/L4c "$1" >> $(getScriptPath)/"temp".L3
+$(getScriptPath)/l5c/L5c "$1" >> $(getScriptPath)/"temp".L4
+$(getScriptPath)/l4c/L4c $(getScriptPath)/"temp".L4 >> $(getScriptPath)/"temp".L3
 $(getScriptPath)/l3c/L3c $(getScriptPath)/"temp".L3 >> $(getScriptPath)/"temp".L2
 $(getScriptPath)/l2c/L2c $(getScriptPath)/"temp".L2 >> $(getScriptPath)/"temp".L1
 $(getScriptPath)/l1c/L1c $(getScriptPath)/"temp".L1
 
 # Cleanup
-rm "temp".L3 "temp".L2 "temp".L1
+rm "temp".L4 "temp".L3 "temp".L2 "temp".L1
 
 IFS=$SAVEIFS
