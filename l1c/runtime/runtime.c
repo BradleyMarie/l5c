@@ -3,16 +3,19 @@
 #include <stdio.h>
 
 #define HEAP_SIZE 1048576  // one megabyte
-//#define HEAP_SIZE 10       // small heap size for testing
+//#define HEAP_SIZE 20       // small heap size for testing
 #define ENABLE_GC          // uncomment this to enable GC
 //#define GC_DEBUG           // uncomment this to enable GC debugging
 
-void** heap;           // the current heap
-void** heap2;          // the heap for copying
-void** heap_temp;      // a pointer used for swapping heap/heap2
+typedef struct {
+   int *allocptr;           // current allocation position
+   int words_allocated;
+   void **data;
+   char *valid;
+} heap_t;
 
-int * allocptr;        // current allocation position
-int words_allocated = 0;
+heap_t heap;      // the current heap
+heap_t heap2;     // the heap for copying
 
 int *stack; // pointer to the bottom of the stack (i.e. value
             // upon program startup)
@@ -20,90 +23,145 @@ int *stack; // pointer to the bottom of the stack (i.e. value
 /*
  * Helper for the print() function
  */
-void print_content(void** in, int depth) {
+void print_content(void **in, int depth) {
+   int i, x, size;
+   void **data;
+
    if(depth >= 4) {
       printf("...");
       return;
    }
-   // NOTE: this function crashes quite messily if in is 0
+   // NOTE: this function crashes quite messily if "in" is 0
    // so we've added this check
    if(in == NULL) {
       printf("nil");
       return;
    }
-   int x = (int) in;
-   if(x&1) {
-      printf("%i",x>>1);
+   x = (int)in;
+   if(x & 1) {
+      printf("%i", x >> 1);
    } else {
-      int size= *((int*)in);
-      void** data = in+1;
-      int i;
+      size= *((int*)in);
+      data = in + 1;
       printf("{s:%i", size);
-      for (i=0;i<size;i++) {
+      for(i = 0; i < size; i++) {
          printf(", ");
-         print_content(*data,depth+1);
+         print_content(*data, depth + 1);
          data++;
       }
       printf("}");
    }
 }
 
+
 /*
  * Runtime "print" function
  */
-int print(void* l) {
-   print_content(l,0);
+int print(void *l) {
+   print_content(l, 0);
    printf("\n");
 
    return 1;
+}
+
+void reset_heap(heap_t *h) {
+   h->allocptr = (int*)h->data;
+   h->words_allocated = 0;
+}
+
+int alloc_heap(heap_t *h) {
+   h->data = (void*)malloc(HEAP_SIZE * sizeof(void*));
+   h->valid = (void*)malloc(HEAP_SIZE * sizeof(char));
+   reset_heap(h);
+   return (h->data != NULL && h->valid != NULL);
+}
+
+void switch_heaps() {
+   int *temp_allocptr = heap.allocptr;
+   int temp_words_allocated = heap.words_allocated;
+   void **temp_data = heap.data;
+   char *temp_valid = heap.valid;
+
+   heap.allocptr = heap2.allocptr;
+   heap.words_allocated = heap2.words_allocated;
+   heap.data = heap2.data;
+   heap.valid = heap2.valid;
+
+   heap2.allocptr = temp_allocptr;
+   heap2.words_allocated = temp_words_allocated;
+   heap2.data = temp_data;
+   heap2.valid = temp_valid;
+
+   reset_heap(&heap);
 }
 
 /*
  * Helper for the gc() function.
  * Copies (compacts) an object from the old heap into
  * the empty heap
- *
- * NOTE: this is a bit nit-picky, but the reason why I
- * feel like this should operate
- * on POINTERS not integers is... its real goal is to
- * copy ALLOCATED ARRAYS onto the new heap (i.e. it
- * doesn't really make sense to talk about moving
- * plain old numbers (ints) from heap to heap).
  */
 int *gc_copy(int *old)  {
-   int i;
+   int i, size, array_size;
+   int *old_array, *new_array, *first_array_location;
+   int valid_index;
+   char is_valid;
+   char *valid;
 
    // If not a pointer or not a pointer to a heap location, return input value
-   if((int)old % 4 != 0 || (void**)old < heap2 || (void**)old >= heap2 + HEAP_SIZE) {
-       return old;
+   if((int)old % 4 != 0 || (void**)old < heap2.data || (void**)old >= heap2.data + heap2.words_allocated) {
+      return old;
+   }
+   
+   // if not pointing at a valid heap object, return input value
+   valid_index = (int)((void**)old - heap2.data);
+   is_valid = heap2.valid[valid_index];
+   if(!is_valid) {
+      return old;
    }
 
-   int * old_array = (int *)old;
-   int size = old_array[0];
+   old_array = (int*)old;
+   size = old_array[0];
+   array_size = size + 1;
 
    // If the size is negative, the array has already been copied to the
    // new heap, so the first location of array will contain the new address
    if(size == -1) {
        return (int*)old_array[1];
    }
+   // If the size is zero, we still have one word of data to copy to the
+   // new heap
+   else if(size == 0) {
+       array_size = 2;
+   }
+
+#ifdef GC_DEBUG
+   printf("gc_copy(): valid=%d old=%p new=%p: size=%d asize=%d total=%d\n", is_valid, old, heap.allocptr, size, array_size, heap.words_allocated);
+#endif
+
+   valid = heap.valid + heap.words_allocated;
 
    // Mark the old array as invalid, create the new array
    old_array[0] = -1;
-   int * new_array = allocptr;
-   allocptr += (size + 1);
-   words_allocated += (size + 1);
+   new_array = heap.allocptr;
+   heap.allocptr += array_size;
+   heap.words_allocated += array_size;
 
    // The value of old_array[1] needs to be handled specially
-   int *first_array_location = (int*)old_array[1];
+   // since it holds a pointer to the new heap object
+   first_array_location = (int*)old_array[1];
    old_array[1] = (int)new_array;
 
    // Set the values of new_array handling the first two locations separately
    new_array[0] = size;
    new_array[1] = (int)gc_copy(first_array_location);
 
+   valid[0] = 1;
+   valid[1] = 0;
+
    // Call gc_copy on the remaining values of the array
-   for (i = 2; i <= size; i++) {
-       new_array[i] = (int)gc_copy((int*)old_array[i]);
+   for (i = 2; i < array_size; i++) {
+      new_array[i] = (int)gc_copy((int*)old_array[i]);
+      valid[i] = 0;
    }
 
    return new_array;
@@ -114,31 +172,32 @@ int *gc_copy(int *old)  {
  */
 void gc(int *esp) {
    int i;
-   // calculate the stack size
-   int stack_size = stack - esp;
+   int stack_size = stack - esp + 1;       // calculate the stack size
+#ifdef GC_DEBUG
+   int prev_words_alloc = heap.words_allocated;
+#endif
 
 #ifdef GC_DEBUG
-   printf("GC: stack=(%p,%p) (size %d), edi=%d, esi=%d: ", esp, stack, stack_size, *edi, *esi);
+   printf("GC: stack=(%p,%p) (size %d): ", esp, stack, stack_size);
 #endif
 
    // swap in the empty heap to use for storing
    // compacted objects
-   heap_temp = heap;
-   heap = heap2;
-   heap2 = heap_temp;
+   switch_heaps();
 
-   // reset heap position
-   allocptr = (int *)heap;
-   words_allocated = 0;
+   // NOTE: the edi/esi register contents could also be
+   // roots, but these have been placed in the stack
+   // by the allocate() assembly function.  Thus,
+   // we only need to look at the stack at this point
 
    // Then, we need to copy anything pointed at
    // by the stack into our empty heap
-   for(i = 0; i <= stack_size; i++) {
+   for(i = 0; i < stack_size; i++) {
       esp[i] = (int)gc_copy((int*)esp[i]);
    }
 
 #ifdef GC_DEBUG
-   printf("reclaimed %d words\n", (prev_words_alloc - words_allocated));
+   printf("reclaimed %d words\n", (prev_words_alloc - heap.words_allocated));
 #endif
 }
 
@@ -152,157 +211,162 @@ asm(
    ".globl allocate\n"
    ".type allocate, @function\n"
    "allocate:\n"
-
-   "# Make a new stack frame\n"
+   "# grab the arguments (into eax,edx)\n"
+   "popl %ecx\n" // return val
+   "popl %eax\n" // arg 1
+   "popl %edx\n" // arg 2
+   "# put the original edi/esi on stack instead of args\n"
+   "pushl %edi\n" // formerly edx
+   "pushl %esi\n" // formerly eax
+   "pushl %ebx\n" // formerly return addr  <-- this is the ESP we want
+   "pushl %ecx\n" // ecx (return val)
+   "pushl %eax\n" // eax (arg 1)
+   "pushl %edx\n" // edx (arg 2)
+   "# save the original esp (into ecx)\n"
+   "movl %esp, %ecx\n"
+   "addl $12, %ecx\n"
+   "\n"
+   "# save the caller's base pointer (so that LEAVE works)\n"
+   "# body begins with base and\n"
+   "# stack pointers equal\n"
    "pushl %ebp\n"
    "movl %esp, %ebp\n"
-
-   "# calculate the value of the top of the L1 stack\n"
-   "movl %esp, %ecx\n"
-   "addl $12, %ecx\n" // 2 arguments and the return address
-
-   "# push the arguments to allocate_helper\n"
-   "pushl %ecx\n" // Top of Stack
-   "pushl -12(%ebp)\n" // Fill
-   "pushl -8(%ebp)\n" // Size
-   //"pushl $3\n"
-
+   "# push the first three args on stack\n"
+   "pushl %ecx\n"
+   "pushl %edx\n"
+   "pushl %eax\n"
    "# call the real alloc\n"
    "call allocate_helper\n"
    "addl $12, %esp\n"
-
+   "\n"
+   "# restore the original base pointer (from stack)\n"
    "leave\n"
-   "ret\n"
+   "# restore esi/edi from stack\n"
+   "popl %edx\n"  // arg 2
+   "popl %ecx\n"  // arg 1
+   "addl $4, %esp\n" // skip over return val (it hasn't changed)
+   "popl %ebx\n"  // restore ebx
+   "popl %esi\n"  // restore esi
+   "popl %edi\n"  // restore edi
+   "pushl %edx\n" // put back arg 2
+   "pushl %ecx\n" // put back arg 1
+   "subl $8, %esp\n" // skip over old ebx
+   "popl %edx\n"  // original return addr
+   "popl %ecx\n"  // junk
+   "pushl %edx\n"  // restore return addr
+   "ret\n" 
 );
 
 /*
-
-
-   "# pop the return address off the stack \n"
-   "popl %edx\n" // Size   
-
-   "# grab the arguments (into eax,edx)\n"
-   "popl %eax\n" // Size
-   "popl %edx\n" // Fill
-
-   "# grab the value of esp + 4 beacuse call pushes the return address\n"
-   "movl %esp, %ecx\n"
-   "addl $4, %ecx\n"
-
-   "# put esi and edi on the stack\n"
-   "pushl %esi\n"
-   "pushl %edi\n"
-
-   "# save the arguments \n"
-   "movl %eax, %esi\n" // Size
-   "movl %edx, %edi\n" // Fill
-
-   "# push the arguments to allocate_helper\n"
-   "pushl %ecx\n" // Top of Stack
-   "pushl %edx\n" // Fill
-   "pushl %eax\n" // Size
-
-   "# call the real alloc\n"
-   "call allocate_helper\n"
-   "addl $12, %esp\n"
-
-
-
-   "leave\n"
-   "ret\n" 
-*/
-
-/*
- * The "allocate" runtime function
+ * The real "allocate" runtime function
+ * (called by the above assembly stub function)
  */
 void* allocate_helper(int fw_size, void *fw_fill, int *esp)
 {
-   printf("fw_size = %i, fw_fill = %i, esp = %i", fw_size, (int)fw_fill, (int)esp);
-   int i;
+   int i, data_size, array_size;
+   char *valid;
+   int *ret;
+
    if(!(fw_size & 1)) {
       printf("allocate called with size input that was not an encoded integer, %i\n",
              fw_size);
-   }
-
-   int dataSize = fw_size >> 1;
-
-   if(dataSize < 0) {
-      printf("allocate called with size of %i\n", dataSize);
       exit(-1);
    }
+
+   data_size = fw_size >> 1;
+
+   if(data_size < 0) {
+      printf("allocate called with size of %i\n", data_size);
+      exit(-1);
+   }
+
+#ifdef GC_DEBUG
+   //printf("runtime.c: allocate(%d,%d (%p)) @ %p: ESP = %p (%d), EDI = %p (%d), ESI = %p (%d), EBX = %p (%d)\n",
+   //       data_size, (int)fw_fill, fw_fill, heap.allocptr, esp, (int)esp, (int*)esp[2], esp[2], (int*)esp[1], esp[1], (int*)esp[0], esp[0]);
+   //fflush(stdout);
+#endif
 
    // Even if there is no data, allocate an array of two words
    // so we can hold a forwarding pointer and an int representing if
    // the array has already been garbage collected
-   int arraySize = (dataSize == 0) ? 2 : dataSize + 1;
+   array_size = (data_size == 0) ? 2 : data_size + 1;
 
    // Check if the heap has space for the allocation
-   if(words_allocated + dataSize >= HEAP_SIZE)
+   if(heap.words_allocated + array_size >= HEAP_SIZE)
    {
 #ifdef ENABLE_GC
       // Garbage collect
       gc(esp);
-#endif
 
       // Check if the garbage collection free enough space for the allocation
-      if(words_allocated + dataSize >= HEAP_SIZE) {
+      if(heap.words_allocated + array_size >= HEAP_SIZE) {
+#endif
          printf("out of memory\n"); // NOTE: we've added a newline
          exit(-1);
+#ifdef ENABLE_GC
       }
+#endif
    }
 
    // Do the allocation
-   int *ret = allocptr;
-   allocptr += arraySize;
-   words_allocated += arraySize;
+   ret = heap.allocptr;
+   valid = heap.valid + heap.words_allocated;
+   heap.allocptr += array_size;
+   heap.words_allocated += array_size;
 
    // Set the size of the array to be the desired size
-   ret[0] = dataSize;
+   ret[0] = data_size;
+
+   // record this as a heap object
+   valid[0] = 1;
 
    // If there is no data, set the value of the array to be a number
    // so it can be properly garbage collected
-   if(dataSize == 0) {
+   if(data_size == 0) {
       ret[1] = 1;
+      valid[1] = 0;
+      //printf(" set %p to 1\n", &ret[1]);
+      //fflush(stdout);
    } else {
       // Fill the array with the fill value
-      // NOTE: memset does NOT working properly here
-      // (maybe because we need to copy WORDS
-      // rather than just bytes, not really sure)
-      for(i = 0; i < dataSize; i++) {
-         ret[i+1] = (int)fw_fill;
+      for(i = 1; i < array_size; i++) {
+         ret[i] = (int)fw_fill;
+         valid[i] = 0;
+         //printf(" set %p to %d (%p)", &ret[i], fw_fill, fw_fill);
       }
+      //printf("\n");
+      //fflush(stdout);
    }
 
    return ret;
 }
 
 /*
- * The "array-error" runtime function
+ * The "print-error" runtime function
  */
-int array_error(int* array, int fw_x) {
+int array_error(int *array, int fw_x) {
    printf("attempted to use position %i in an array that only has %i positions\n",
-      fw_x>>1, *array);
+          fw_x >> 1, *array);
    exit(0);
 }
+
 
 /*
  * Program entry-point
  */
 int main() {
-
-   heap = (void*)malloc(HEAP_SIZE*sizeof(void*));
-   heap2 = (void*)malloc(HEAP_SIZE*sizeof(void*));
-   allocptr = (int*)heap;
+   int b1 = alloc_heap(&heap);
+   int b2 = alloc_heap(&heap2);
    // NOTE: allocptr needs to appear in the following check, because otherwise
    // gcc apparently optimizes away the assignment (i.e. the allocate_helper function
    // sees allocptr as NULL)
-   if(!allocptr || !heap2) {
+   if(!b1 || !b2) {
       printf("malloc failed\n");
       exit(-1);
    }
 
-   // move esp into the bottom-of-stack pointer
-   // the "go" function's boilerplate (as long as one copies it
+   // Move esp into the bottom-of-stack pointer.
+   // The "go" function's boilerplate (as long as one copies it
    // correctly from the lecture notes), in conjunction with
    // the C calling convention dictates that there will be
    // exactly 6 words added to the stack before the
@@ -315,6 +379,10 @@ int main() {
       :             // inputs (none)
       : "%eax"      // clobbered registers (eax)
    );  
+
+#ifdef GC_DEBUG
+   printf("runtime.c: main(): initial ESP value = %p (%d)\n", stack, (int)stack);
+#endif
 
    return 0;
 }
