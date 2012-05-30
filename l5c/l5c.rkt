@@ -20,7 +20,7 @@
 
 (define (reserved-word? sym) (set-member? reserved-words sym))
 
-(define biop (set '+ '- '* '< '<= '= 'alen 'aref 'new-array))
+(define biop (set '+ '- '* '< '<= '= 'aref 'new-array))
 (define (biop? sexpr)
   (set-member? biop sexpr))
 
@@ -124,7 +124,7 @@
          sexpr)]))
 
 (define (remove-built-in-funcs sexpr)
-  (if (list? sexpr)
+  (if (and (list? sexpr) (not (empty? sexpr)))
       (cons 
        (if (or (biop? (first sexpr)) (builtin? (first sexpr)) (equal? 'aset (first sexpr)))
            (first sexpr)
