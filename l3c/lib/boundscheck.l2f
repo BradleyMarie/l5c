@@ -5,18 +5,17 @@
  
  (eax <- offset)
  (call :decode)
- (decodedoffset <- eax)
  
- (cjump 0 <= decodedoffset :valid1 :invalid)
+ (cjump 0 <= eax :valid1 :invalid)
  
  :valid1
  
- (cjump decodedoffset < length :valid2 :invalid)
+ (cjump eax < length :valid2 :invalid)
  
  :valid2
- (decodedoffset *= 4)
- (decodedoffset += 4)
- (base += decodedoffset)
+ (eax *= 4)
+ (eax += 4)
+ (base += eax)
  (eax <- base)
  (return)
  

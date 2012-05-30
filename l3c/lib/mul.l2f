@@ -1,16 +1,20 @@
 (:mul
+ (oldEsi <- esi)
+ (oldEdi <- edi)
  (v1 <- eax)
  (v2 <- edx)
 
  (call :decode)
- (decoded-v1 <- eax)
+ (esi <- eax)
 
  (eax <- v2)
  (call :decode)
- (decoded-v2 <- eax)
+ (edi <- eax)
 
- (ret <- decoded-v1)
- (ret *= decoded-v2)
+ (ret <- esi)
+ (ret *= edi)
 
  (eax <- ret)
+ (esi <- oldEsi)
+ (edi <- oldEdi)
  (tail-call :encode))
