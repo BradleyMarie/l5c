@@ -1,0 +1,13 @@
+(letrec ([catalan
+          (lambda (n)
+            (letrec ([catalan-rec
+                      (lambda (n i)
+                        (if (<= i n)
+                            (+ (* (catalan i)
+                                  (catalan (- n i)))
+                               (catalan-rec n (+ i 1)))
+                            0))])
+              (if (= n 0)
+                  1
+                  (catalan-rec (- n 1) 0))))])
+  (print (catalan 18)))
