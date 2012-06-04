@@ -8,9 +8,6 @@ getScriptPath() {
 	echo ${0%/*}/
 }
 
-#preprocess 
-$(getScriptPath)/L1c-preprocessor "$1" > "$$".L1
-
 # Compile
 
 cat $(getScriptPath)/header.s > "$$".s
@@ -24,6 +21,6 @@ as -32 -o "$$".o "$$".s
 gcc -m32 -o a.out "$$".o $(getScriptPath)/runtime/runtime.o
 
 # Cleanup
-rm "$$".s "$$".o "$$".L1
+rm "$$".s "$$".o
 
 IFS=$SAVEIFS
