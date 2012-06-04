@@ -73,9 +73,10 @@
   (if (zero? num-spilled)
       function
       (let ([esp-adjustment (list 'esp '-= (* 4 num-spilled))]
+            [temp-init (build-list num-spilled (lambda (x) `((mem ebp ,(* -4 (+ 1 x))) <- 1)))]
             [esp-restore (list 'esp '+= (* 4 num-spilled))])
         (if (label? (first function))
-            (list* (first function) esp-adjustment (rest function))
+            (list* (first function) esp-adjustment (append temp-init (rest function)))
             (append (cons esp-adjustment function) (list esp-restore))))))
 
 
