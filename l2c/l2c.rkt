@@ -69,16 +69,23 @@
             [register (second (first coloring))])
         (replace-variables (replace-list-elements function variable register) (rest coloring)))))
 
+(define (init-stack-space-rec num-spilled i)
+  (if (< i num-spilled)
+      (append `(((mem esp ,(* 4 i)) <- 0)) (init-stack-space-rec num-spilled (+ i 1)))
+      (list)))
+
+(define (init-stack-space num-spilled)
+  (init-stack-space-rec num-spilled 0))
+
 (define (allocate-scratch-space function num-spilled)
   (if (zero? num-spilled)
       function
-      (let ([esp-adjustment (list 'esp '-= (* 4 num-spilled))]
+      (let ([esp-adjustment (list* (list 'esp '-= (* 4 num-spilled)) (init-stack-space num-spilled))]
             [temp-init (build-list num-spilled (lambda (x) `((mem ebp ,(* -4 (+ 1 x))) <- 1)))]
             [esp-restore (list 'esp '+= (* 4 num-spilled))])
         (if (label? (first function))
-            (list* (first function) esp-adjustment (append temp-init (rest function)))
-            (append (cons esp-adjustment function) (list esp-restore))))))
-
+            (append (list* (first function) esp-adjustment) (append temp-init (rest function)))
+            (append esp-adjustment function (list esp-restore))))))
 
 (define (compile-function-rec sexpr num-spilled variables)
   (let ([coloring (generate-colored-graph (generate-interference-graph sexpr))])
