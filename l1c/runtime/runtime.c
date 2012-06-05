@@ -85,6 +85,13 @@ int print(void *l) {
    print_content(l, 0);
    printf("\n");
 
+   asm ("movl $1, %%ecx;"
+        "movl $1, %%edx;"
+      :             // outputs (none)
+      :             // inputs (none)
+      : "%ecx", "%edx" // clobbered registers (caller-saves, except return val EAX)
+   );
+
    return 1;
 }
 
@@ -276,6 +283,8 @@ asm(
    "popl %edx\n"  // original return addr
    "popl %ecx\n"  // junk
    "pushl %edx\n"  // restore return addr
+   "movl $1, %ecx\n" // make sure the caller-saves don't have fake-ptr garbage
+   "movl $1, %edx\n"
    "ret\n" 
 );
 
@@ -389,13 +398,16 @@ int main() {
    asm ("movl %%esp, %%eax;"
         "subl $24, %%eax;" // 6 * 4
         "movl %%eax, %0;"
-        "movl $1, %%ebx;"
+        "movl $1, %%eax;"  // clear the caller-saves
+        "movl $1, %%ecx;"
+        "movl $1, %%edx;"
+        "movl $1, %%ebx;"  // clear the callee-saves
         "movl $1, %%edi;"
         "movl $1, %%esi;"
         "call go;"
       : "=m"(stack) // outputs
       :             // inputs (none)
-      : "%eax", "%ebx", "%edi", "%esi" // clobbered registers (eax & callee-saves)
+      : "%eax", "%ecx", "%edx", "%ebx", "%edi", "%esi" // clobbered registers (caller- & callee-saves)
    );  
 
 #ifdef GC_DEBUG
